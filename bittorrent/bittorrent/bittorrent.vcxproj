@@ -51,7 +51,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;BITTORRENT_EXPORTS;%(PreprocessorDefinitions);WIN32_LEAN_AND_MEAN;BOOST_ASIO_SEPARATE_COMPILATION;WIN32_LEAN_AND_MEAN;WITH_SHIPPED_GEOIP_H;TORRENT_USE_OPENSSL</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;BITTORRENT_EXPORTS;%(PreprocessorDefinitions);WIN32_LEAN_AND_MEAN;BOOST_ASIO_SEPARATE_COMPILATION;WIN32_LEAN_AND_MEAN;WITH_SHIPPED_GEOIP_H;TORRENT_USE_OPENSSL;BOOST_ASIO_ENABLE_CANCELIO</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\;..\include;..\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
@@ -67,7 +67,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;BITTORRENT_EXPORTS;%(PreprocessorDefinitions);WIN32_LEAN_AND_MEAN;BOOST_ASIO_SEPARATE_COMPILATION;WIN32_LEAN_AND_MEAN;WITH_SHIPPED_GEOIP_H;TORRENT_USE_OPENSSL</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;BITTORRENT_EXPORTS;%(PreprocessorDefinitions);WIN32_LEAN_AND_MEAN;BOOST_ASIO_SEPARATE_COMPILATION;WIN32_LEAN_AND_MEAN;WITH_SHIPPED_GEOIP_H;TORRENT_USE_OPENSSL;BOOST_ASIO_ENABLE_CANCELIO</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\mpir-1.3.1;%(AdditionalIncludeDirectories);..\;..\include;..\zlib;</AdditionalIncludeDirectories>
       <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
