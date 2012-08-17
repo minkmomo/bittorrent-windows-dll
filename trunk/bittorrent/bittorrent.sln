@@ -3,6 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bittorrent", "bittorrent\bittorrent.vcxproj", "{A4B1EA20-BF11-4715-AC69-F40D2B761E9E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wintorrent", "wintorrent\wintorrent.vcxproj", "{0A39072A-4468-47F6-A834-F97466801A74}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A4B1EA20-BF11-4715-AC69-F40D2B761E9E} = {A4B1EA20-BF11-4715-AC69-F40D2B761E9E}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
@@ -17,6 +22,10 @@ Global
 		{A4B1EA20-BF11-4715-AC69-F40D2B761E9E}.Debug|Win32.Build.0 = Debug|Win32
 		{A4B1EA20-BF11-4715-AC69-F40D2B761E9E}.Release|Win32.ActiveCfg = Release|Win32
 		{A4B1EA20-BF11-4715-AC69-F40D2B761E9E}.Release|Win32.Build.0 = Release|Win32
+		{0A39072A-4468-47F6-A834-F97466801A74}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0A39072A-4468-47F6-A834-F97466801A74}.Debug|Win32.Build.0 = Debug|Win32
+		{0A39072A-4468-47F6-A834-F97466801A74}.Release|Win32.ActiveCfg = Release|Win32
+		{0A39072A-4468-47F6-A834-F97466801A74}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
