@@ -52,7 +52,7 @@ namespace libtorrent
 		, std::function< void(int,char const *) > error_handler
 		, std::function< void(int,int) > print_progress
 		, std::vector<std::string> const & web_seeds, std::vector<std::string> const & trackers
-		, bool use_merklefile /*= true*/, std::string root_cert /*= ""*/
+		, bool use_merklefile /*= false*/, std::string root_cert /*= ""*/
 		, int pad_file_limit /*= -1*/, int piece_size /*= 0*/, bool inc_sha1_hash /*= true*/
 		, bool dont_follow_symlinks /*= false*/ )
 	{
@@ -85,6 +85,39 @@ namespace libtorrent
 			if( dont_follow_symlinks )
 			{
 				flags |= create_torrent::symlinks;
+			}
+
+			if( trackers.empty() )
+			{
+				trackers.push_back( "http://exodus.desync.com:6969/announce" );
+				trackers.push_back( "http://tracker.publicbt.com/announce" );
+				trackers.push_back( "http://tpb.tracker.prq.to/announce.php" );
+				trackers.push_back( "http://tv.tracker.prq.to/announce" );
+				trackers.push_back( "http://tracker.prq.to/announce.php" );
+				trackers.push_back( "http://cpleft.com:2710/announce" );
+				trackers.push_back( "http://i.bandito.org/announce" );
+				trackers.push_back( "http://tracker.ex.ua/announce" );
+				trackers.push_back( "http://tracker.tfile.me/announce" );
+				trackers.push_back( "udp://tracker.openbittorrent.com:80/announce" );
+				trackers.push_back( "udp://tracker.publicbt.com:80/announce" );
+				trackers.push_back( "udp://tracker.publicbt.com:80/announce" );
+				trackers.push_back( "http://open.nyaatorrents.info:6544/announce" );
+				trackers.push_back( "udp://tracker.publicbt.com:80/announce" );
+				trackers.push_back( "http://announce.torrentsmd.com:8080/announce" );
+				trackers.push_back( "http://announce.torrentsmd.com:8080/announce.php" );
+				trackers.push_back( "http://bt.home-ix.ru/announce" );
+				trackers.push_back( "http://bt.home-ix.ru/announce.php" );
+				trackers.push_back( "http://cpleft.com:2710/announce" );
+				trackers.push_back( "http://exodus.desync.com:6969/announceexodus.desync.com:6969/announce" );
+				trackers.push_back( "http://ipv4.tracker.harry.lu.nyud.net/announce" );
+				trackers.push_back( "http://ipv4.tracker.harry.lu/announce" );
+				trackers.push_back( "http://ix3.rutracker.net/announce" );
+				trackers.push_back( "http://openbt.my-hit.ru:2710/announce" );
+				trackers.push_back( "http://retracker.kld.ru/announce" );
+				trackers.push_back( "http://retracker.kld.ru:2710/announce" );
+				trackers.push_back( "http://tracker.ccc.de/announce" );
+				trackers.push_back( "http://tracker.ex.ua/announce" );
+				trackers.push_back( "http://tracker.torrentbay.to:6969/announce" );
 			}
 
 			file_storage fs;

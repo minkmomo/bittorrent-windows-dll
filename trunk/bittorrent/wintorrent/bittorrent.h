@@ -28,7 +28,7 @@ namespace libtorrent
 		, std::function< void(int,char const *) > error_handler
 		, std::function< void(int,int) > print_progress
 		, std::vector<std::string> const & web_seeds, std::vector<std::string> const & trackers
-		, bool use_merklefile = true, std::string root_cert = ""
+		, bool use_merklefile = false, std::string root_cert = ""
 		, int pad_file_limit = -1, int piece_size = 0, bool inc_sha1_hash = true
 		, bool dont_follow_symlinks = false );
 
