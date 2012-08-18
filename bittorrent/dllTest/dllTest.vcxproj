@@ -42,11 +42,13 @@
     <OutDir>..\dll\</OutDir>
     <IncludePath>..\wintorrent\;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)_d</TargetName>
+    <LibraryPath>..\dll\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\dll\</OutDir>
     <IncludePath>..\wintorrent\;$(IncludePath)</IncludePath>
+    <LibraryPath>..\dll\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
