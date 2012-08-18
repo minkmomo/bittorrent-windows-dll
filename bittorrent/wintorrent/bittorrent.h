@@ -3,6 +3,12 @@
 #include <vector>
 #include <functional>
 
+#ifdef _COMPLING_BITTORRENT_DLL_
+#define LIBSPEC __declspec(dllexport)
+#else
+#define LIBSPEC __declspec(dllimport)
+#endif
+
 namespace libtorrent
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -18,7 +24,7 @@ namespace libtorrent
 	// inc_sha1_hash			include sha-1 file hashes in the torrent this helps supporting mixing sources from other networks
 	// dont_follow_symlinks		Don't follow symlinks, instead encode them as links in the torrent file
 	
-	bool make( std::string target_file, std::string outfile
+	extern "C" LIBSPEC bool make( std::string target_file, std::string outfile
 		, std::function< void(int,char const *) > error_handler
 		, std::function< void(int,int) > print_progress
 		, std::vector<std::string> const & web_seeds, std::vector<std::string> const & trackers

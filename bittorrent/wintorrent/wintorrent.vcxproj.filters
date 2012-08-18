@@ -4,22 +4,10 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="bittorrent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="wintorrent.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="bittorrent.cpp">
