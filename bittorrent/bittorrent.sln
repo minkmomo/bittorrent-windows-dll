@@ -9,6 +9,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wintorrent", "wintorrent\wi
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dllTest", "dllTest\dllTest.vcxproj", "{7840AB07-BF36-417F-9B7C-D9E925DCB374}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0A39072A-4468-47F6-A834-F97466801A74} = {0A39072A-4468-47F6-A834-F97466801A74}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
