@@ -19,7 +19,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	std::vector<std::string> webseeds;
 	std::vector<std::string> trackers;
 
-	libtorrent::make( "DDB191.avi", "test.torrent", [](int i,char const*msg){ ::MessageBoxA( 0, msg, 0, 0 ); }, [](int c, int m){}, webseeds, trackers );
+	webseeds.push_back( "http://dl.dropbox.com/s/qod5i7lsqo2r9hb/20120723_145231.mp4" );
+
+	libtorrent::make( "20120723_145231.mp4", "test3.torrent", [](int i,char const*msg){ ::MessageBoxA( 0, msg, 0, 0 ); }, [](int c, int m){}, webseeds, trackers );
 
 	return 0;
 }
