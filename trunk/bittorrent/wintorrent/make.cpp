@@ -1,26 +1,5 @@
 #include "bittorrent.h"
 
-#ifdef _DEBUG
-#pragma comment (lib, "bittorrent_d.lib")
-#else
-#pragma comment (lib, "bittorrent.lib")
-#endif
-
-#pragma comment (lib, "WS2_32.lib")
-#pragma comment (lib, "4758cca.lib")
-#pragma comment (lib, "aep.lib")
-#pragma comment (lib, "atalla.lib")
-#pragma comment (lib, "capi.lib")
-#pragma comment (lib, "chil.lib")
-#pragma comment (lib, "cswift.lib")
-#pragma comment (lib, "gost.lib")
-#pragma comment (lib, "libeay32.lib")
-#pragma comment (lib, "nuron.lib")
-#pragma comment (lib, "padlock.lib")
-#pragma comment (lib, "ssleay32.lib")
-#pragma comment (lib, "sureware.lib")
-#pragma comment (lib, "ubsec.lib")
-
 #include "libtorrent/entry.hpp"
 #include "libtorrent/bencode.hpp"
 #include "libtorrent/torrent_info.hpp"
@@ -28,10 +7,16 @@
 #include "libtorrent/storage.hpp"
 #include "libtorrent/hasher.hpp"
 #include "libtorrent/create_torrent.hpp"
-#include "libtorrent/file.hpp"
 #include "libtorrent/file_pool.hpp"
-
-#include <boost/bind.hpp>
+#include "libtorrent/session.hpp"
+#include "libtorrent/identify_client.hpp"
+#include "libtorrent/alert_types.hpp"
+#include "libtorrent/ip_filter.hpp"
+#include "libtorrent/magnet_uri.hpp"
+#include "libtorrent/bitfield.hpp"
+#include "libtorrent/peer_info.hpp"
+#include "libtorrent/socket_io.hpp" // print_address
+#include "libtorrent/time.hpp"
 
 namespace libtorrent
 {
@@ -47,10 +32,10 @@ namespace libtorrent
 	// piece_size bytes			specifies a piece size for the torrent. This has to be a multiple of 16 kiB
 	// inc_sha1_hash			include sha-1 file hashes in the torrent this helps supporting mixing sources from other networks
 	// dont_follow_symlinks		Don't follow symlinks, instead encode them as links in the torrent file
-	
+
 	bool make( std::string target_file, std::string outfile
-		, std::function< void(int,char const *) > error_handler
-		, std::function< void(int,int) > print_progress
+		, ErrorHandler error_handler
+		, ProgressHandler print_progress
 		, std::vector<std::string> const & web_seeds, std::vector<std::string> & trackers
 		, bool use_merklefile /*= false*/, std::string root_cert /*= ""*/
 		, int pad_file_limit /*= -1*/, int piece_size /*= 0*/, bool inc_sha1_hash /*= true*/
@@ -71,7 +56,7 @@ namespace libtorrent
 				merklefile = outfile + "_mkl";
 				flags |= create_torrent::merkle;
 			}
-			
+
 			if( inc_sha1_hash )
 			{
 				flags |= create_torrent::calculate_file_hashes;
@@ -89,22 +74,6 @@ namespace libtorrent
 
 			if( trackers.empty() )
 			{
-				/*
-				trackers.push_back( "http://exodus.desync.com:6969/announce" );
-				trackers.push_back( "http://cpleft.com:2710/announce" );
-				trackers.push_back( "http://i.bandito.org/announce" );
-				trackers.push_back( "http://tracker.tfile.me/announce" );
-				trackers.push_back( "http://announce.torrentsmd.com:8080/announce" );
-				trackers.push_back( "http://bt.home-ix.ru/announce" );
-				trackers.push_back( "http://cpleft.com:2710/announce" );
-				trackers.push_back( "http://exodus.desync.com:6969/announceexodus.desync.com:6969/announce" );
-				trackers.push_back( "http://ipv4.tracker.harry.lu/announce" );
-				trackers.push_back( "http://ix3.rutracker.net/announce" );
-				trackers.push_back( "http://openbt.my-hit.ru:2710/announce" );
-				trackers.push_back( "http://retracker.kld.ru/announce" );
-				trackers.push_back( "http://tracker.ccc.de/announce" );
-				trackers.push_back( "http://tracker.ex.ua/announce" );
-				*/
 				trackers.push_back( "udp://tracker.openbittorrent.com:80/announce" );
 				trackers.push_back( "udp://tracker.publicbt.com:80/announce" );
 			}
@@ -114,11 +83,11 @@ namespace libtorrent
 			std::string full_path = libtorrent::complete( target_file );
 
 			add_files(fs, full_path, [](std::string const& f)->bool
-				{
-					if (filename(f)[0] == '.') return false;
-					//fprintf(stderr, "%s\n", f.c_str());
-					return true;
-				}
+			{
+				if (filename(f)[0] == '.') return false;
+				//fprintf(stderr, "%s\n", f.c_str());
+				return true;
+			}
 			, flags);
 
 			if (fs.num_files() == 0)
@@ -139,7 +108,7 @@ namespace libtorrent
 				//if( i->find( "http" ) == 0 )
 				//	t.add_http_seed(*i);
 				//else
-					t.add_url_seed(*i);
+				t.add_url_seed(*i);
 			}
 
 			error_code ec;
