@@ -515,7 +515,7 @@ namespace libtorrent
 		}
 #endif
 
-		session_settings_.user_agent = "libtorrent_client/" LIBTORRENT_VERSION;
+		session_settings_.user_agent = "libtorrent/" LIBTORRENT_VERSION;
 		session_settings_.choking_algorithm = session_settings::auto_expand_choker;
 		session_settings_.disk_cache_algorithm = session_settings::avoid_readback;
 		session_settings_.volatile_read_cache = false;
