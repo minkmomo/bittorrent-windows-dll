@@ -14,6 +14,7 @@
     <ProjectGuid>{A4B1EA20-BF11-4715-AC69-F40D2B761E9E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>bittorrent</RootNamespace>
+    <ProjectName>libtorrent</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -80,9 +81,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\libtorrent\address.hpp" />
     <ClInclude Include="..\include\libtorrent\add_torrent_params.hpp" />
@@ -219,8 +217,6 @@
     <ClInclude Include="..\include\libtorrent\web_connection_base.hpp" />
     <ClInclude Include="..\include\libtorrent\web_peer_connection.hpp" />
     <ClInclude Include="..\include\libtorrent\xml_parse.hpp" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\alert.cpp" />
@@ -312,19 +308,6 @@
     <ClCompile Include="..\src\ut_pex.cpp" />
     <ClCompile Include="..\src\web_connection_base.cpp" />
     <ClCompile Include="..\src\web_peer_connection.cpp" />
-    <ClCompile Include="bittorrent.cpp" />
-    <ClCompile Include="dllmain.cpp">
-      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</CompileAsManaged>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
