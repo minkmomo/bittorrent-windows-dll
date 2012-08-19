@@ -97,7 +97,7 @@ namespace libtorrent
 		// MAGNETURL is a magnet link
 		// URL is a url to a torrent file
 		// Example for running benchmark:
-		// -k -z -N -h -H -M -l 2000 -S 1000 -T 1000 -c 1000 test.torrent
+		// -k -z -N -h -H -M -l 2000 -S 1000 -T 1000 -c 1000
 		TorrentSession( std::vector< std::string > const & sessionSettingParam, ErrorHandler error_handler, int listenPort = 6881 );
 		~TorrentSession();
 
