@@ -80,6 +80,46 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	TorrentSessionImpl::TorrentSessionImpl( int listenPort, std::vector<std::string> const & sessionSettingParam, ErrorHandler error_handler, EventHandler event_handler ) 
+		: listen_port_(listenPort)
+		, allocation_mode_( libtorrent::storage_mode_sparse )
+		, save_path_(".")
+		, torrent_upload_limit_(0)
+		, torrent_download_limit_(0)
+		, bind_to_interface_("")
+		, outgoing_interface_("")
+		, poll_interval_(5)
+		, max_connections_per_torrent_(50)
+		, seed_mode_(false)
+		, share_mode_(false)
+		, disable_storage_(false)
+		, start_dht_(true)
+		, start_upnp_(true)
+		, start_lsd_(true)
+		, error_handler_(error_handler)
+		, event_handler_(event_handler)
+		//, active_torrent_(0)
+		, next_dir_scan_(time_now())
+		, num_outstanding_resume_data_(0)
+		, session_(fingerprint("LT", LIBTORRENT_VERSION_MAJOR, LIBTORRENT_VERSION_MINOR, 0, 0)
+		, session::add_default_plugins
+		, alert::all_categories
+		& ~(alert::dht_notification
+		+ alert::progress_notification
+		+ alert::debug_notification
+		+ alert::stats_notification))
+	{
+		LoadSetting();
+
+		SetSessionSetting( sessionSettingParam, true );
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
 	bool TorrentSessionImpl::AddTorrent( std::string const & torrent )
 	{
 		error_code ec;
@@ -438,6 +478,147 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
+	char const* esc(char const* code)
+	{
+#ifdef ANSI_TERMINAL_COLORS
+		// this is a silly optimization
+		// to avoid copying of strings
+		enum { num_strings = 200 };
+		static char buf[num_strings][20];
+		static int round_robin = 0;
+		char* ret = buf[round_robin];
+		++round_robin;
+		if (round_robin >= num_strings) round_robin = 0;
+		ret[0] = '\033';
+		ret[1] = '[';
+		int i = 2;
+		int j = 0;
+		while (code[j]) ret[i++] = code[j++];
+		ret[i++] = 'm';
+		ret[i++] = 0;
+		return ret;
+#else
+		return "";
+#endif
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	void print_peer_info(std::string& out, std::vector<libtorrent::peer_info> const& peers)
+	{
+		char str[500];
+		for (std::vector<peer_info>::const_iterator i = peers.begin();
+			i != peers.end(); ++i)
+		{
+			if (i->flags & (peer_info::handshake | peer_info::connecting | peer_info::queued))
+				continue;
+
+			//if (print_ip)
+			{
+				snprintf(str, sizeof(str), "%-30s %-22s", (print_endpoint(i->ip) +
+					(i->connection_type == peer_info::bittorrent_utp ? " [uTP]" : "")).c_str()
+					, print_endpoint(i->local_endpoint).c_str());
+				out += str;
+			}
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	std::string const& progress_bar(int progress, int width, char const* code = "33")
+	{
+		static std::string bar;
+		bar.clear();
+		bar.reserve(width + 10);
+
+		int progress_chars = (progress * width + 500) / 1000;
+		bar = esc(code);
+		std::fill_n(std::back_inserter(bar), progress_chars, '#');
+		std::fill_n(std::back_inserter(bar), width - progress_chars, '-');
+		bar += esc("0");
+		return bar;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	std::string to_string(int v, int width)
+	{
+		char buf[100];
+		snprintf(buf, sizeof(buf), "%*d", width, v);
+		return buf;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	std::string& to_string(float v, int width, int precision = 3)
+	{
+		// this is a silly optimization
+		// to avoid copying of strings
+		enum { num_strings = 20 };
+		static std::string buf[num_strings];
+		static int round_robin = 0;
+		std::string& ret = buf[round_robin];
+		++round_robin;
+		if (round_robin >= num_strings) round_robin = 0;
+		ret.resize(20);
+		int size = snprintf(&ret[0], 20, "%*.*f", width, precision, v);
+		ret.resize((std::min)(size, width));
+		return ret;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	std::string add_suffix(float val, char const* suffix = 0)
+	{
+		std::string ret;
+		if (val == 0)
+		{
+			ret.resize(4 + 2, ' ');
+			if (suffix) ret.resize(4 + 2 + strlen(suffix), ' ');
+			return ret;
+		}
+
+		const char* prefix[] = {"kB", "MB", "GB", "TB"};
+		const int num_prefix = sizeof(prefix) / sizeof(const char*);
+		for (int i = 0; i < num_prefix; ++i)
+		{
+			val /= 1000.f;
+			if (std::fabs(val) < 1000.f)
+			{
+				ret = to_string(val, 4);
+				ret += prefix[i];
+				if (suffix) ret += suffix;
+				return ret;
+			}
+		}
+		ret = to_string(val, 4);
+		ret += "PB";
+		if (suffix) ret += suffix;
+		return ret;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	void clear_home()
+	{
+		CONSOLE_SCREEN_BUFFER_INFO si;
+		HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+		GetConsoleScreenBufferInfo(h, &si);
+		COORD c = {0, 0};
+		DWORD n;
+		FillConsoleOutputCharacter(h, ' ', si.dwSize.X * si.dwSize.Y, c, &n);
+		SetConsoleCursorPosition(h, c);
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
 	void TorrentSessionImpl::Update()
 	{
 		session_.post_torrent_updates();
@@ -458,13 +639,100 @@ namespace libtorrent
 					print_alert(*i, event_string);
 					events_.push_back(event_string);
 					if (events_.size() >= 20) events_.pop_front();
-					printf( "%s\n", event_string.c_str() );
+					//printf( "%s\n", event_string.c_str() );
 				}
 			} TORRENT_CATCH(std::exception& e) {}
 
 			delete *i;
 		}
 		alerts.clear();
+
+
+		
+
+		std::string out;
+
+		char str[1024];
+
+		for( auto status = all_handles_.begin(); status != all_handles_.end(); ++status )
+		{
+			if( !status->handle.is_valid() )
+				continue;
+
+			torrent_handle const & handle = status->handle;
+
+			out += "====== ";
+			out += handle.name();
+			out += " ======\n";
+
+			// peer
+			/*
+			std::vector< peer_info > peer_infos;
+
+			if( status->state != torrent_status::seeding )
+				handle.get_peer_info( peer_infos );
+
+			if( peer_infos.empty() == false )
+			{
+				print_peer_info( out, peer_infos );
+			}*/
+
+			// tracker
+
+			std::vector<announce_entry> tr = handle.trackers();
+			ptime now = time_now();
+			for (std::vector<announce_entry>::iterator i = tr.begin()
+				, end(tr.end()); i != end; ++i)
+			{
+				snprintf(str, sizeof(str), "%2d %-55s fails: %-3d (%-3d) %s %s %5d \"%s\" %s\n"
+					, i->tier, i->url.c_str(), i->fails, i->fail_limit, i->verified?"OK ":"-  "
+					, i->updating?"updating"
+					:!i->will_announce(now)?""
+					:to_string(total_seconds(i->next_announce - now), 8).c_str()
+					, i->min_announce > now ? total_seconds(i->min_announce - now) : 0
+					, i->last_error ? i->last_error.message().c_str() : ""
+					, i->message.c_str());
+				out += str;
+			}
+
+			// download
+
+			if( status->state == torrent_status::seeding )
+			{
+				out += "seeding\n";
+			}
+			else
+			{
+				std::vector<size_type> file_progress;
+				handle.file_progress(file_progress);
+				torrent_info const& info = handle.get_torrent_info();
+				for (int i = 0; i < info.num_files(); ++i)
+				{
+					bool pad_file = info.file_at(i).pad_file;
+					if (pad_file) continue;
+					int progress = info.file_at(i).size > 0
+						?file_progress[i] * 1000 / info.file_at(i).size:1000;
+
+					char const* color = (file_progress[i] == info.file_at(i).size)
+						?"32":"33";
+
+					snprintf(str, sizeof(str), "%s %s %-5.2f%% %s %s%s\n",
+						progress_bar(progress, 100, color).c_str()
+						, pad_file?esc("34"):""
+						, progress / 10.f
+						, add_suffix(file_progress[i]).c_str()
+						, filename(info.files().file_path(info.file_at(i))).c_str()
+						, pad_file?esc("0"):"");
+					out += str;
+				}
+			}
+
+			out += "___________________________________\n";
+		}
+
+		clear_home();
+		puts(out.c_str());
+		fflush(stdout);
 
 
 		if (!monitor_dir_.empty()
@@ -537,42 +805,6 @@ namespace libtorrent
 
 			files_.erase(i++);
 		}
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-
-	TorrentSessionImpl::TorrentSessionImpl( int listenPort, std::vector<std::string> const & sessionSettingParam, ErrorHandler error_handler ) 
-		: listen_port_(listenPort)
-		, allocation_mode_( libtorrent::storage_mode_sparse )
-		, save_path_(".")
-		, torrent_upload_limit_(0)
-		, torrent_download_limit_(0)
-		, bind_to_interface_("")
-		, outgoing_interface_("")
-		, poll_interval_(5)
-		, max_connections_per_torrent_(50)
-		, seed_mode_(false)
-		, share_mode_(false)
-		, disable_storage_(false)
-		, start_dht_(true)
-		, start_upnp_(true)
-		, start_lsd_(true)
-		, error_handler_(error_handler)
-		//, active_torrent_(0)
-		, next_dir_scan_(time_now())
-		, num_outstanding_resume_data_(0)
-		, session_(fingerprint("LT", LIBTORRENT_VERSION_MAJOR, LIBTORRENT_VERSION_MINOR, 0, 0)
-		, session::add_default_plugins
-		, alert::all_categories
-		& ~(alert::dht_notification
-		+ alert::progress_notification
-		+ alert::debug_notification
-		+ alert::stats_notification))
-	{
-		LoadSetting();
-
-		SetSessionSetting( sessionSettingParam, true );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -784,6 +1016,8 @@ namespace libtorrent
 							h.connect_peer(tcp::endpoint(address::from_string(ip, ec), peer_port));
 					}
 				}
+
+				all_handles.insert(h.status());
 			}
 		}
 		else if (torrent_finished_alert* p = alert_cast<torrent_finished_alert>(a))
@@ -796,6 +1030,8 @@ namespace libtorrent
 			torrent_handle h = p->handle;
 			h.save_resume_data();
 			++num_outstanding_resume_data_;
+
+			event_handler_( torrent_event_finished, h.name() );
 		}
 		else if (save_resume_data_alert* p = alert_cast<save_resume_data_alert>(a))
 		{
@@ -853,6 +1089,14 @@ namespace libtorrent
 			return true;
 		}
 		return false;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	TorrentSessionImpl::~TorrentSessionImpl()
+	{
+		SaveSetting();
 	}
 
 	//////////////////////////////////////////////////////////////////////////

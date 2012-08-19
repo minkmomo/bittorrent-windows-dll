@@ -25,17 +25,33 @@ int _tmain(int argc, _TCHAR* argv[])
 	libtorrent::make( "20120723_145231.mp4", "test3.torrent", [](int i,char const*msg){ ::MessageBoxA( 0, msg, 0, 0 ); }, [](int c, int m){}, webseeds, trackers );
 	*/
 
+	bool finish = false;
+
+	char const * test_torrent_name = "test3.torrent";
+
 	std::vector< std::string > setting_params;
 
-	libtorrent::TorrentSession torrent_session( setting_params, [](int i, char const * msg){ ::MessageBoxA(0,msg, 0,0); } );
+	auto error_handler = [](int i, char const * msg){ 
+		::MessageBoxA(0,msg, 0,0);
+	};
 
-	torrent_session.AddTorrent( "test3.torrent" );
+	auto event_handler = [&finish,test_torrent_name]( libtorrent::eTorrentEvent e, std::string const & torrent ) {
+		if( torrent == test_torrent_name )
+		{
+			::MessageBoxA( 0, test_torrent_name, "complete", 0 );
+			finish = true;
+		}
+	};
 
-	while(true)
+	libtorrent::TorrentSession torrent_session( setting_params, error_handler, event_handler );
+
+	torrent_session.AddTorrent( test_torrent_name );
+
+	while(!finish)
 	{
 		Sleep(1);
 
-		//torrent_session.Update();
+		torrent_session.Update();
 	}
 
 	return 0;
