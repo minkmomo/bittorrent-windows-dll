@@ -35,7 +35,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		Sleep(1);
 
-		torrent_session.Update();
+		//torrent_session.Update();
 	}
 
 	return 0;

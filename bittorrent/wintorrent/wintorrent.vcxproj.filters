@@ -2,6 +2,9 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="bittorrent.h" />
+    <ClInclude Include="session_impl.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -11,6 +14,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="session.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="session_impl.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
