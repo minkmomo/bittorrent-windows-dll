@@ -22,9 +22,12 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	webseeds.push_back( "http://dl.dropbox.com/s/qod5i7lsqo2r9hb/20120723_145231.mp4" );
 
+	trackers.push_back( "http://192.168.123.133:46936/announce" );
+
 	libtorrent::make( "20120723_145231.mp4", "test3.torrent", [](int i,char const*msg){ ::MessageBoxA( 0, msg, 0, 0 ); }, [](int c, int m){}, webseeds, trackers );
 	*/
 
+	
 	bool finish = false;
 
 	char const * test_torrent_name = "test3.torrent";
@@ -53,6 +56,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		torrent_session.Update();
 	}
+	
 
 	return 0;
 }
