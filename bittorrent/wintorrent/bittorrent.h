@@ -23,28 +23,90 @@ namespace libtorrent
 
 	class TorrentSessionImplBase {
 	public:
-		virtual ~TorrentSessionImplBase() = 0;
+		virtual ~TorrentSessionImplBase() = 0 {};
+		virtual void Update() = 0;
+		virtual bool AddTorrent(std::string const & torrent) = 0;
+		virtual bool SetSessionSetting( std::vector<std::string> const & params, bool isFirst = false ) = 0;
 	};
 
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	class TorrentSession
+	class LIBSPEC TorrentSession
 	{
 	public:
-		TorrentSession( std::string sessionSettingParam, std::string proxySettingParam, ErrorHandler & error_handler, int listenPort = 6881 );
+		
+		// CLIENT OPTIONS
+		// -s <path>				sets the save path for downloads
+		// -m <path>				sets the .torrent monitor directory
+		// -t <seconds>				sets the scan interval of the monitor dir
+		// -k						enable high performance settings. This overwrites any other
+		//							previous command line options, so be sure to specify this first
+		// -G						Add torrents in seed-mode (i.e. assume all pieces are present and check hashes on-demand)
+		// BITTORRENT OPTIONS
+		// -c <limit>				sets the max number of connections
+		// -T <limit>				sets the max number of connections per torrent
+		// -U <rate>				sets per-torrent upload rate
+		// -D <rate>				sets per-torrent download rate
+		// -d <rate>				limits the download rate
+		// -u <rate>				limits the upload rate
+		// -S <limit>				limits the upload slots
+		// -A <num pieces>			allowed pieces set size
+		// -H						Don't start DHT
+		// -X						Don't start local peer discovery
+		// -n						announce to trackers in all tiers
+		// -W <num peers>			Set the max number of peers to keep in the peer list
+		// -B <seconds>				sets the peer timeout
+		// -Q						enables share mode. Share mode attempts to maximize
+		//							share ratio rather than downloading
+		// -r <IP:port>				connect to specified peer
+#ifndef TORRENT_DISABLE_ENCRYPTION
+		// -e						force encrypted bittorrent connections
+#endif
+		// QUEING OPTIONS
+		// -v <limit>				Set the max number of active downloads
+		// -^ <limit>				Set the max number of active seeds
+		// NETWORK OPTIONS
+		// -p <port>				sets the listen port
+		// -o <limit>				limits the number of simultaneous half-open TCP connections to the given number.
+		// -w <seconds>				sets the retry time for failed web seeds
+		// -x <file>				loads an emule IP-filter file
+		// -P <host:port>			Use the specified SOCKS5 proxy
+		// -L <user:passwd>			Use the specified username and password for the proxy specified by -P
+		// -h						allow multiple connections from the same IP
+		// -M						Disable TCP/uTP bandwidth balancing
+		// -N						Do not attempt to use UPnP and NAT-PMP to forward ports
+		// -Y						Rate limit local peers
+		// -y						Disable TCP connections (disable outgoing TCP and reject incoming TCP connections)
+		// -b <IP>					sets IP of the interface to bind the listen socket to
+		// -I <IP>					sets the IP of the interface to bind outgoing peer connections to
+#if TORRENT_USE_I2P
+		// -i <i2p-host>			the hostname to an I2P SAM bridge to use
+#endif
+		// -l <limit>				sets the listen socket queue size
+		// DISK OPTIONS
+		// -a <mode>				sets the allocation mode. [sparse|full]
+		// -R <num blocks>			number of blocks per read cache line
+		// -C <limit>				sets the max cache size. Specified in 16kB blocks
+		// -O						Disallow disk job reordering
+		// -j						disable disk read-ahead
+		// -z						disable piece hash checks (used for benchmarking)
+		// -0						disable disk I/O, read garbage and don't flush to disk
+		//
+		// TORRENT is a path to a .torrent file
+		// MAGNETURL is a magnet link
+		// URL is a url to a torrent file
+		// Example for running benchmark:
+		// -k -z -N -h -H -M -l 2000 -S 1000 -T 1000 -c 1000 test.torrent
+		TorrentSession( std::vector< std::string > const & sessionSettingParam, ErrorHandler error_handler, int listenPort = 6881 );
 		~TorrentSession();
 
+		void Update();
 		bool AddTorrent(std::string torrent);
-		bool Puse();
-		bool Resume();
-
-		bool SetSessionSetting( std::string params );
-		bool SetProxySetting( std::string params );
+		bool SetSessionSetting( std::vector<std::string> const & params );
 
 	private:
-		typedef std::tr1::shared_ptr< TorrentSessionImplBase > ImplPtr;
-		ImplPtr impl_;
+		TorrentSessionImplBase * impl_;
 	};
 
 	//////////////////////////////////////////////////////////////////////////
