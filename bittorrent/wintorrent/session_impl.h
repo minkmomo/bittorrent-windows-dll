@@ -42,9 +42,9 @@ namespace libtorrent
 	class TorrentSessionImpl : public TorrentSessionImplBase
 	{
 	public:
-		TorrentSessionImpl(int listenPort, std::vector<std::string> const & sessionSettingParam, ErrorHandler error_handler);
+		TorrentSessionImpl(int listenPort, std::vector<std::string> const & sessionSettingParam, ErrorHandler error_handler, EventHandler event_handler );
 
-		virtual ~TorrentSessionImpl() { SaveSetting(); }
+		virtual ~TorrentSessionImpl();
 
 		virtual void Update();
 
@@ -92,6 +92,7 @@ namespace libtorrent
 		std::string peer_;
 
 		ErrorHandler error_handler_;
+		EventHandler event_handler_;
 
 		std::deque<std::string> events_;
 

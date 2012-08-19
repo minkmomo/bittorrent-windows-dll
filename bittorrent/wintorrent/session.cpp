@@ -6,8 +6,8 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	TorrentSession::TorrentSession( std::vector< std::string > const & sessionSettingParam, ErrorHandler error_handler, int listenPort )
-		: impl_( new TorrentSessionImpl( listenPort, sessionSettingParam, error_handler ) )
+	TorrentSession::TorrentSession( std::vector< std::string > const & sessionSettingParam, ErrorHandler error_handler, EventHandler event_handler, int listenPort )
+		: impl_( new TorrentSessionImpl( listenPort, sessionSettingParam, error_handler, event_handler ) )
 	{}
 
 	//////////////////////////////////////////////////////////////////////////
