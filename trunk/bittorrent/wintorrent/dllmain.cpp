@@ -3,9 +3,9 @@
 #include <windows.h>
 
 #ifdef _DEBUG
-#pragma comment (lib, "bittorrent_d.lib")
+#pragma comment (lib, "libtorrent_d.lib")
 #else
-#pragma comment (lib, "bittorrent.lib")
+#pragma comment (lib, "libtorrent.lib")
 #endif
 
 #pragma comment (lib, "WS2_32.lib")

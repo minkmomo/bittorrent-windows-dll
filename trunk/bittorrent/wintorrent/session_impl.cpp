@@ -105,12 +105,12 @@ namespace libtorrent
 		, next_dir_scan_(time_now())
 		, num_outstanding_resume_data_(0)
 		, session_(fingerprint("LT", LIBTORRENT_VERSION_MAJOR, LIBTORRENT_VERSION_MINOR, 0, 0)
-		, session::add_default_plugins
-		, alert::all_categories
-		& ~(alert::dht_notification
-		+ alert::progress_notification
-		+ alert::debug_notification
-		+ alert::stats_notification))
+			, session::add_default_plugins
+			, alert::all_categories
+			& ~(alert::dht_notification
+			+ alert::progress_notification
+			+ alert::debug_notification
+			+ alert::stats_notification))
 	{
 		LoadSetting();
 
@@ -195,11 +195,12 @@ namespace libtorrent
 		boost::intrusive_ptr<torrent_info> t;
 		error_code ec;
 
-		t = new torrent_info(torrent.c_str(), ec);
+		t = new torrent_info(torrent, ec);
 
 		if (ec)
 		{
 			error_handler_( 0, (torrent + ": " + ec.message()).c_str() );
+			t.reset();
 			return false;
 		}
 
@@ -505,21 +506,23 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	void print_peer_info(std::string& out, std::vector<libtorrent::peer_info> const& peers)
+	void print_peer_info(std::string& out, PeerInfos const& peers)
 	{
-		char str[500];
-		for (std::vector<peer_info>::const_iterator i = peers.begin();
-			i != peers.end(); ++i)
+		char str[1024];
+		for (auto i = peers.begin(); i != peers.end(); ++i)
 		{
-			if (i->flags & (peer_info::handshake | peer_info::connecting | peer_info::queued))
+			peer_info * peerInfo = i->get();
+
+			if (peerInfo->flags & (peer_info::handshake | peer_info::connecting | peer_info::queued))
 				continue;
 
 			//if (print_ip)
 			{
-				snprintf(str, sizeof(str), "%-30s %-22s", (print_endpoint(i->ip) +
-					(i->connection_type == peer_info::bittorrent_utp ? " [uTP]" : "")).c_str()
-					, print_endpoint(i->local_endpoint).c_str());
+				snprintf(str, sizeof(str), "peer : %-30s %-22s", (print_endpoint(peerInfo->ip) +
+					(peerInfo->connection_type == peer_info::bittorrent_utp ? " [uTP]" : "")).c_str()
+					, print_endpoint(peerInfo->local_endpoint).c_str());
 				out += str;
+				out += "\n";
 			}
 		}
 	}
@@ -654,6 +657,8 @@ namespace libtorrent
 
 		char str[1024];
 
+		PeerInfos peer_infos;
+
 		for( auto status = all_handles_.begin(); status != all_handles_.end(); ++status )
 		{
 			if( !status->handle.is_valid() )
@@ -665,17 +670,13 @@ namespace libtorrent
 			out += handle.name();
 			out += " ======\n";
 
-			// peer
-			/*
-			std::vector< peer_info > peer_infos;
-
-			if( status->state != torrent_status::seeding )
+			//if( status->state != torrent_status::seeding )
 				handle.get_peer_info( peer_infos );
 
 			if( peer_infos.empty() == false )
 			{
 				print_peer_info( out, peer_infos );
-			}*/
+			}
 
 			// tracker
 
@@ -693,6 +694,7 @@ namespace libtorrent
 					, i->last_error ? i->last_error.message().c_str() : ""
 					, i->message.c_str());
 				out += str;
+				out += "\n";
 			}
 
 			// download
@@ -701,7 +703,7 @@ namespace libtorrent
 			{
 				out += "seeding\n";
 			}
-			else
+			else if( status->has_metadata )
 			{
 				std::vector<size_type> file_progress;
 				handle.file_progress(file_progress);
@@ -710,8 +712,8 @@ namespace libtorrent
 				{
 					bool pad_file = info.file_at(i).pad_file;
 					if (pad_file) continue;
-					int progress = info.file_at(i).size > 0
-						?file_progress[i] * 1000 / info.file_at(i).size:1000;
+					int progress = (int)(info.file_at(i).size > 0
+						?file_progress[i] * 1000 / info.file_at(i).size:1000);
 
 					char const* color = (file_progress[i] == info.file_at(i).size)
 						?"32":"33";

@@ -5434,7 +5434,7 @@ namespace libtorrent
 		}
 	}
 
-	void torrent::get_peer_info(std::vector<peer_info>& v)
+	void torrent::get_peer_info(PeerInfos & v)
 	{
 		v.clear();
 		for (peer_iterator i = begin();
@@ -5447,10 +5447,11 @@ namespace libtorrent
 			// not be included in this list
 			if (peer->associated_torrent().expired()) continue;
 
-			v.push_back(peer_info());
-			peer_info& p = v.back();
+			PeerInfoPtr peer_info( new peer_info() );
+
+			v.push_back( peer_info );
 			
-			peer->get_peer_info(p);
+			peer->get_peer_info( *peer_info );
 #ifndef TORRENT_DISABLE_RESOLVE_COUNTRIES
 			if (resolving_countries())
 				resolve_peer_country(intrusive_ptr<peer_connection>(peer));

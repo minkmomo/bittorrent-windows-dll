@@ -945,7 +945,7 @@ namespace libtorrent
 		TORRENT_SYNC_CALL1(get_full_peer_list, boost::ref(v));
 	}
 
-	void torrent_handle::get_peer_info(std::vector<peer_info>& v) const
+	void torrent_handle::get_peer_info(PeerInfos & v) const
 	{
 		INVARIANT_CHECK;
 		TORRENT_SYNC_CALL1(get_peer_info, boost::ref(v));

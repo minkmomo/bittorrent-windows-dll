@@ -737,12 +737,19 @@ namespace libtorrent
 	{
 		std::vector<char> buf;
 		int ret = load_file(filename, buf, ec);
-		if (ret < 0) return;
+		if (ret > -1)
+		{
+			lazy_entry e;
+			if (buf.size() == 0 || lazy_bdecode(&buf[0], &buf[0] + buf.size(), e, ec) != 0)
+			{
 
-		lazy_entry e;
-		if (buf.size() == 0 || lazy_bdecode(&buf[0], &buf[0] + buf.size(), e, ec) != 0)
-			return;
-		parse_torrent_file(e, ec, flags);
+			}
+			else
+			{
+				parse_torrent_file(e, ec, flags);
+			}
+			
+		}		
 
 		INVARIANT_CHECK;
 	}

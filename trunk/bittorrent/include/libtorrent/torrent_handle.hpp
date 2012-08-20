@@ -59,6 +59,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "libtorrent/bitfield.hpp"
 #include "libtorrent/socket.hpp" // tcp::endpoint
 
+#include <vector>
+#include <memory>
+
 namespace libtorrent
 {
 	namespace aux
@@ -70,6 +73,9 @@ namespace libtorrent
 	struct peer_info;
 	struct peer_list_entry;
 	struct torrent_status;
+
+	typedef std::tr1::shared_ptr< peer_info > PeerInfoPtr;
+	typedef std::vector< PeerInfoPtr > PeerInfos;
 
 	TORRENT_EXPORT std::size_t hash_value(torrent_status const& ts);
 
@@ -167,7 +173,7 @@ namespace libtorrent
 		bool have_piece(int piece) const;
 
 		void get_full_peer_list(std::vector<peer_list_entry>& v) const;
-		void get_peer_info(std::vector<peer_info>& v) const;
+		void get_peer_info(PeerInfos & v) const;
 
 		enum status_flags_t
 		{

@@ -37,6 +37,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <boost/version.hpp>
 #include <stdio.h> // for snprintf
 #include <limits.h> // for IOV_MAX
+#include <stdint.h>
 
 #if defined TORRENT_DEBUG_BUFFERS && !defined TORRENT_DISABLE_POOL_ALLOCATOR
 #error TORRENT_DEBUG_BUFFERS only works if you also disable pool allocators with TORRENT_DISABLE_POOL_ALLOCATOR
