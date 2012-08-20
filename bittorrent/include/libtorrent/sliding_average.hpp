@@ -78,7 +78,7 @@ struct average_accumulator
 		, m_sample_sum(0)
 	{}
 
-	void add_sample(int s)
+	void add_sample(size_type s)
 	{
 		++m_num_samples;
 		m_sample_sum += s;

@@ -170,7 +170,7 @@ namespace
 			p->add_free_upload(upload_share);
 			free_upload -= upload_share;
 		}
-		return (std::min)(free_upload, size_type(UINT_MAX));
+		return (uint32_t)(std::min)(free_upload, size_type(UINT_MAX));
 	}
 
 	struct find_peer_by_ip
@@ -386,7 +386,7 @@ namespace libtorrent
 		, m_got_tracker_response(false)
 		, m_connections_initialized(false)
 		, m_super_seeding(false)
-		, m_override_resume_data(p.flags & add_torrent_params::flag_override_resume_data)
+		, m_override_resume_data( (p.flags & add_torrent_params::flag_override_resume_data) ? true : false )
 #ifndef TORRENT_DISABLE_RESOLVE_COUNTRIES
 		, m_resolving_country(false)
 		, m_resolve_countries(false)
@@ -412,9 +412,9 @@ namespace libtorrent
 		, m_announce_to_trackers((p.flags & add_torrent_params::flag_paused) == 0)
 		, m_announce_to_lsd((p.flags & add_torrent_params::flag_paused) == 0)
 		, m_allow_peers((p.flags & add_torrent_params::flag_paused) == 0)
-		, m_upload_mode(p.flags & add_torrent_params::flag_upload_mode)
-		, m_auto_managed(p.flags & add_torrent_params::flag_auto_managed)
-		, m_share_mode(p.flags & add_torrent_params::flag_share_mode)
+		, m_upload_mode( (p.flags & add_torrent_params::flag_upload_mode) ? true :false )
+		, m_auto_managed( (p.flags & add_torrent_params::flag_auto_managed) ? true : false )
+		, m_share_mode( (p.flags & add_torrent_params::flag_share_mode) ? true : false )
 		, m_num_verified(0)
 		, m_last_scrape(0)
 		, m_last_download(0)
@@ -425,9 +425,9 @@ namespace libtorrent
 		, m_need_connect_boost(true)
 		, m_lsd_seq(0)
 		, m_magnet_link(false)
-		, m_apply_ip_filter(p.flags & add_torrent_params::flag_apply_ip_filter)
-		, m_merge_resume_trackers(p.flags & add_torrent_params::flag_merge_resume_trackers)
-		, m_state_subscription(p.flags & add_torrent_params::flag_update_subscribe)
+		, m_apply_ip_filter( (p.flags & add_torrent_params::flag_apply_ip_filter) ? true : false)
+		, m_merge_resume_trackers( (p.flags & add_torrent_params::flag_merge_resume_trackers) ? true : false)
+		, m_state_subscription( (p.flags & add_torrent_params::flag_update_subscribe) ? true : false)
 		, m_in_state_updates(false)
 	{
 #if defined TORRENT_DEBUG || TORRENT_RELEASE_ASSERTS
@@ -1667,9 +1667,9 @@ namespace libtorrent
 			, end(m_torrent_file->files().end()); i != end; ++i, ++file)
 		{
 			if (!i->pad_file || i->size == 0) continue;
-			m_padding += i->size;
+			m_padding += unsigned int(i->size);
 			
-			peer_request pr = m_torrent_file->map_file(file, 0, m_torrent_file->file_at(file).size);
+			peer_request pr = m_torrent_file->map_file(file, 0, (int)m_torrent_file->file_at(file).size);
 			int off = pr.start & (block_size()-1);
 			if (off != 0) { pr.length -= block_size() - off; pr.start += block_size() - off; }
 			TORRENT_ASSERT((pr.start & (block_size()-1)) == 0);
@@ -1825,7 +1825,7 @@ namespace libtorrent
 					lazy_entry const* e = peers_entry->list_at(i);
 					if (e->type() != lazy_entry::dict_t) continue;
 					std::string ip = e->dict_find_string_value("ip");
-					int port = e->dict_find_int_value("port");
+					int port = (int)e->dict_find_int_value("port");
 					if (ip.empty() || port == 0) continue;
 					error_code ec;
 					tcp::endpoint a(address::from_string(ip, ec), (unsigned short)port);
@@ -1842,7 +1842,7 @@ namespace libtorrent
 					lazy_entry const* e = banned_peers_entry->list_at(i);
 					if (e->type() != lazy_entry::dict_t) continue;
 					std::string ip = e->dict_find_string_value("ip");
-					int port = e->dict_find_int_value("port");
+					int port = (int)e->dict_find_int_value("port");
 					if (ip.empty() || port == 0) continue;
 					error_code ec;
 					tcp::endpoint a(address::from_string(ip, ec), (unsigned short)port);
@@ -1896,7 +1896,7 @@ namespace libtorrent
 					{
 						for (int i = 0; i < slots->list_size(); ++i)
 						{
-							int piece = slots->list_int_value_at(i, -1);
+							int piece = (int)slots->list_int_value_at(i, -1);
 							if (piece >= 0) we_have(piece);
 						}
 					}
@@ -1912,7 +1912,7 @@ namespace libtorrent
 					{
 						lazy_entry const* e = unfinished_ent->list_at(i);
 						if (e->type() != lazy_entry::dict_t) continue;
-						int piece = e->dict_find_int_value("piece", -1);
+						int piece = (int)e->dict_find_int_value("piece", -1);
 						if (piece < 0 || piece > torrent_file().num_pieces()) continue;
 
 						if (m_picker->have_piece(piece))
@@ -2804,7 +2804,7 @@ namespace libtorrent
 		{
 			file_entry const& fe = fs.at(i->file_index);
 			if (fe.pad_file) continue;
-			ret += i->size;
+			ret += (int)i->size;
 		}
 		TORRENT_ASSERT(ret <= (std::min)(piece_size - offset, int(block_size())));
 		return ret;
@@ -3125,7 +3125,7 @@ namespace libtorrent
 			size_type file_offset = off - f->offset;
 			TORRENT_ASSERT(f != m_torrent_file->files().end());
 			TORRENT_ASSERT(file_offset <= f->size);
-			int add = (std::min)(f->size - file_offset, (size_type)size);
+			int add = (int)(std::min)(f->size - file_offset, (size_type)size);
 			m_file_progress[file_index] += add;
 
 			TORRENT_ASSERT(m_file_progress[file_index]
@@ -3909,8 +3909,8 @@ namespace libtorrent
 		
 		if (m_torrent_file->num_pieces() == 0) return;
 
-		int limit = int(files.size());
-		if (valid_metadata() && limit > m_torrent_file->num_files())
+		size_t limit = files.size();
+		if (valid_metadata() && (int)limit > m_torrent_file->num_files())
 			limit = m_torrent_file->num_files();
 
 		if (m_file_priority.size() < limit)
@@ -3962,7 +3962,7 @@ namespace libtorrent
 
 		files->resize(m_torrent_file->num_files());
 		std::copy(m_file_priority.begin(), m_file_priority.end(), files->begin());
-		if (m_file_priority.size() < m_torrent_file->num_files())
+		if ((int)m_file_priority.size() < m_torrent_file->num_files())
 			std::fill(files->begin() + m_file_priority.size(), files->end(), 1);
 	}
 
@@ -4360,8 +4360,8 @@ namespace libtorrent
 			}
 			TORRENT_ASSERT(pp->prev_amount_upload == 0);
 			TORRENT_ASSERT(pp->prev_amount_download == 0);
-			pp->prev_amount_download += p->statistics().total_payload_download() >> 10;
-			pp->prev_amount_upload += p->statistics().total_payload_upload() >> 10;
+			pp->prev_amount_download += (uint32_t)p->statistics().total_payload_download() >> 10;
+			pp->prev_amount_upload += (uint32_t)p->statistics().total_payload_upload() >> 10;
 		}
 
 		m_policy.connection_closed(*p, m_ses.session_time());
@@ -4961,17 +4961,17 @@ namespace libtorrent
 		m_complete = rd.dict_find_int_value("num_seeds", 0xffffff);
 		m_incomplete = rd.dict_find_int_value("num_incomplete", 0xffffff);
 		m_downloaders = rd.dict_find_int_value("num_downloaders", 0xffffff);
-		set_upload_limit(rd.dict_find_int_value("upload_rate_limit", -1));
-		set_download_limit(rd.dict_find_int_value("download_rate_limit", -1));
-		set_max_connections(rd.dict_find_int_value("max_connections", -1));
-		set_max_uploads(rd.dict_find_int_value("max_uploads", -1));
+		set_upload_limit((int)rd.dict_find_int_value("upload_rate_limit", -1));
+		set_download_limit((int)(rd.dict_find_int_value("download_rate_limit", -1)));
+		set_max_connections((int)rd.dict_find_int_value("max_connections", -1));
+		set_max_uploads((int)rd.dict_find_int_value("max_uploads", -1));
 		m_seed_mode = rd.dict_find_int_value("seed_mode", 0) && m_torrent_file->is_valid();
 		if (m_seed_mode) m_verified.resize(m_torrent_file->num_pieces(), false);
-		super_seeding(rd.dict_find_int_value("super_seeding", 0));
+		super_seeding(rd.dict_find_int_value("super_seeding", 0) ? true : false);
 
-		m_last_scrape = rd.dict_find_int_value("last_scrape", 0);
-		m_last_download = rd.dict_find_int_value("last_download", 0);
-		m_last_upload = rd.dict_find_int_value("last_upload", 0);
+		m_last_scrape = (uint16_t)rd.dict_find_int_value("last_scrape", 0);
+		m_last_download = (uint16_t)rd.dict_find_int_value("last_download", 0);
+		m_last_upload = (uint16_t)rd.dict_find_int_value("last_upload", 0);
 
 		m_url = rd.dict_find_string_value("url");
 		m_uuid = rd.dict_find_string_value("uuid");
@@ -5013,7 +5013,7 @@ namespace libtorrent
 			== m_torrent_file->num_files())
 		{
 			for (int i = 0; i < file_priority->list_size(); ++i)
-				m_file_priority[i] = file_priority->list_int_value_at(i, 1);
+				m_file_priority[i] = (uint8_t)file_priority->list_int_value_at(i, 1);
 			update_piece_priorities();
 		}
 
@@ -5029,16 +5029,16 @@ namespace libtorrent
 
 		if (!m_override_resume_data)
 		{
-			int auto_managed_ = rd.dict_find_int_value("auto_managed", -1);
-			if (auto_managed_ != -1) m_auto_managed = auto_managed_;
+			int auto_managed_ = (int)rd.dict_find_int_value("auto_managed", -1);
+			if (auto_managed_ != -1) m_auto_managed = auto_managed_?true:false;
 		}
 
-		int sequential_ = rd.dict_find_int_value("sequential_download", -1);
-		if (sequential_ != -1) set_sequential_download(sequential_);
+		int sequential_ = (int)rd.dict_find_int_value("sequential_download", -1);
+		if (sequential_ != -1) set_sequential_download(sequential_?true:false);
 
 		if (!m_override_resume_data)
 		{
-			int paused_ = rd.dict_find_int_value("paused", -1);
+			int paused_ = (int)rd.dict_find_int_value("paused", -1);
 			if (paused_ != -1)
 			{
 				m_allow_peers = !paused_;
@@ -5046,12 +5046,12 @@ namespace libtorrent
 				m_announce_to_trackers = !paused_;
 				m_announce_to_lsd = !paused_;
 			}
-			int dht_ = rd.dict_find_int_value("announce_to_dht", -1);
-			if (dht_ != -1) m_announce_to_dht = dht_;
-			int lsd_ = rd.dict_find_int_value("announce_to_lsd", -1);
-			if (lsd_ != -1) m_announce_to_lsd = lsd_;
-			int track_ = rd.dict_find_int_value("announce_to_trackers", -1);
-			if (track_ != -1) m_announce_to_trackers = track_;
+			int dht_ = (int)rd.dict_find_int_value("announce_to_dht", -1);
+			if (dht_ != -1) m_announce_to_dht = dht_?true:false;
+			int lsd_ = (int)rd.dict_find_int_value("announce_to_lsd", -1);
+			if (lsd_ != -1) m_announce_to_lsd = lsd_?true:false;
+			int track_ = (int)rd.dict_find_int_value("announce_to_trackers", -1);
+			if (track_ != -1) m_announce_to_trackers = track_?true:false;
 		}
 
 		lazy_entry const* trackers = rd.dict_find_list("trackers");
@@ -5706,7 +5706,7 @@ namespace libtorrent
 		if (m_share_mode)
 			recalc_share_mode();
 
-		return peerinfo->connection;
+		return peerinfo->connection?true:false;
 	}
 
 	bool torrent::set_metadata(char const* metadata_buf, int metadata_size)
@@ -5872,7 +5872,7 @@ namespace libtorrent
 			// connection attempts that haven't completed yet,
 			// disconnect one of them and let this incoming
 			// connection through.
-			if (m_num_connecting < m_max_connections / 10)
+			if ( m_num_connecting < int(m_max_connections / 10) )
 			{
 				p->disconnect(errors::too_many_connections);
 				return false;
@@ -8345,7 +8345,7 @@ namespace libtorrent
 		st->is_finished = is_finished();
 		st->super_seeding = m_super_seeding;
 		st->has_metadata = valid_metadata();
-		bytes_done(*st, flags & torrent_handle::query_accurate_download_counters);
+		bytes_done(*st, (flags & torrent_handle::query_accurate_download_counters) ? true : false);
 		TORRENT_ASSERT(st->total_wanted_done >= 0);
 		TORRENT_ASSERT(st->total_done >= st->total_wanted_done);
 
@@ -8441,8 +8441,8 @@ namespace libtorrent
 		}
 		else
 		{
-			st->progress_ppm = st->total_wanted_done * 1000000
-				/ st->total_wanted;
+			st->progress_ppm = (int)(st->total_wanted_done * 1000000
+				/ st->total_wanted);
 #if !TORRENT_NO_FPU
 			st->progress = st->progress_ppm / 1000000.f;
 #endif

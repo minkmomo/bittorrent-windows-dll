@@ -675,7 +675,7 @@ namespace libtorrent
 
 		if (num_write_calls > 0)
 		{
-			m_write_time.add_sample(total_microseconds(done - write_start) / num_write_calls);
+			m_write_time.add_sample((total_microseconds(done - write_start) / num_write_calls));
 			m_cache_stats.cumulative_write_time += total_milliseconds(done - write_start);
 		}
 		if (ret > 0)
@@ -1355,7 +1355,7 @@ namespace libtorrent
 		m_jobs.back().callback.swap(const_cast<boost::function<void(int, disk_io_job const&)>&>(f));
 
 		m_signal.signal(l);
-		return m_queue_buffer_size;
+		return (int)m_queue_buffer_size;
 	}
 
 	int disk_io_thread::add_job(disk_io_job const& j
@@ -1426,7 +1426,7 @@ namespace libtorrent
 	bool should_cancel_on_abort(disk_io_job const& j)
 	{
 		TORRENT_ASSERT(j.action >= 0 && j.action < int(sizeof(action_flags)));
-		return action_flags[j.action] & cancel_on_abort;
+		return (action_flags[j.action] & cancel_on_abort) ? true : false;
 	}
 
 	bool is_read_operation(disk_io_job const& j)
@@ -1438,7 +1438,7 @@ namespace libtorrent
 	bool operation_has_buffer(disk_io_job const& j)
 	{
 		TORRENT_ASSERT(j.action >= 0 && j.action < int(sizeof(action_flags)));
-		return action_flags[j.action] & buffer_operation;
+		return (action_flags[j.action] & buffer_operation) ? true : false;
 	}
 
 	void disk_io_thread::thread_fun()
@@ -1573,10 +1573,10 @@ namespace libtorrent
 			int unchoke_limit = m_settings.unchoke_slots_limit;
 			if (unchoke_limit < 0) unchoke_limit = 100;
 
-			if (m_sorted_read_jobs.size() > unchoke_limit * 2)
+			if ( (int)m_sorted_read_jobs.size() > unchoke_limit * 2)
 			{
 				int range = unchoke_limit;
-				int exceed = m_sorted_read_jobs.size() - range * 2;
+				int exceed = (int)m_sorted_read_jobs.size() - range * 2;
 				read_job_every = (exceed * 1 + (range - exceed) * read_job_every) / 2;
 				if (read_job_every < 1) read_job_every = 1;
 			}
@@ -1670,8 +1670,8 @@ namespace libtorrent
 					ptime now = time_now_hires();
 					m_sort_time.add_sample(total_microseconds(now - sort_start));
 					m_job_time.add_sample(total_microseconds(now - operation_start));
-					m_cache_stats.cumulative_sort_time += total_milliseconds(now - sort_start);
-					m_cache_stats.cumulative_job_time += total_milliseconds(now - operation_start);
+					m_cache_stats.cumulative_sort_time += (uint32_t)total_milliseconds(now - sort_start);
+					m_cache_stats.cumulative_job_time += (uint32_t)total_milliseconds(now - operation_start);
 					continue;
 				}
 
@@ -1793,7 +1793,7 @@ namespace libtorrent
 						if (m_physical_ram == 0)
 							m_settings.cache_size = 1024;
 						else
-							m_settings.cache_size = m_physical_ram / 8 / m_block_size;
+							m_settings.cache_size = (int)(m_physical_ram / 8 / m_block_size);
 					}
 					break;
 				}

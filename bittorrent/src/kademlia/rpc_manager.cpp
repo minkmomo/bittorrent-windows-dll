@@ -174,7 +174,7 @@ rpc_manager::rpc_manager(node_id const& our_id
 	, m_destructing(false)
 	, m_ext_ip(ext_ip)
 {
-	std::srand(time(0));
+	std::srand((unsigned int)time(0));
 
 #ifdef TORRENT_DHT_VERBOSE_LOGGING
 	TORRENT_LOG(rpc) << "Constructing";

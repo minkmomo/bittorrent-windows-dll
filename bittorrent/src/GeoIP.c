@@ -359,7 +359,7 @@ int _check_mtime(GeoIP *gi) {
 				ConvertUTF8toUTF16((const UTF8**)&src_start, (const UTF8*)src_start
 					+ name_len+1, (UTF16**)&dst_start, (UTF16*)dst_start + name_len + 1
 					, lenientConversion);
-				gi->GeoIPDatabase = _wfopen(wfilename,L"rb");
+				_wfopen_s(&gi->GeoIPDatabase, wfilename, L"rb");
 				free(wfilename);
 #else
 				gi->GeoIPDatabase = fopen(gi->file_path,"rb");
@@ -564,7 +564,7 @@ GeoIP* GeoIP_open (const char * filename, int flags) {
 		free(gi);
 		return NULL;
 	}
-	strncpy(gi->file_path, filename, len);
+	strncpy(gi->file_path, len, filename, len);
 #ifdef WIN32
 	assert(sizeof(wchar_t) == 2);
 	name_len = strlen(filename);
@@ -574,7 +574,7 @@ GeoIP* GeoIP_open (const char * filename, int flags) {
 	ConvertUTF8toUTF16((const UTF8**)&src_start, (const UTF8*)src_start
 		+ name_len+1, (UTF16**)&dst_start, (UTF16*)dst_start + name_len + 1
 		, lenientConversion);
-	gi->GeoIPDatabase = _wfopen(wfilename,L"rb");
+	_wfopen_s( &gi->GeoIPDatabase, wfilename,L"rb");
 	free(wfilename);
 #else
 	gi->GeoIPDatabase = fopen(filename,"rb");
@@ -586,7 +586,7 @@ GeoIP* GeoIP_open (const char * filename, int flags) {
 		return NULL;
 	} else {
 		if (flags & (GEOIP_MEMORY_CACHE | GEOIP_MMAP_CACHE) ) {
-			if (fstat(fileno(gi->GeoIPDatabase), &buf) == -1) {
+			if (fstat(_fileno(gi->GeoIPDatabase), &buf) == -1) {
 				fprintf(stderr,"Error stating file %s\n",filename);
 				free(gi->file_path);
 				free(gi);
@@ -621,7 +621,7 @@ GeoIP* GeoIP_open (const char * filename, int flags) {
 			}
 		} else {
 			if (flags & GEOIP_CHECK_CACHE) {
-				if (fstat(fileno(gi->GeoIPDatabase), &buf) == -1) {
+				if (fstat(_fileno(gi->GeoIPDatabase), &buf) == -1) {
 					fprintf(stderr,"Error stating file %s\n",filename);
 					free(gi->file_path);
 					free(gi);
@@ -1012,12 +1012,12 @@ char *_get_name (GeoIP* gi, unsigned long ipnum) {
 		fread(buf, sizeof(char), MAX_ORG_RECORD_LENGTH, gi->GeoIPDatabase);
 		len = sizeof(char) * (strlen(buf)+1);
 		org_buf = (char*)malloc(len);
-		strncpy(org_buf, buf, len);
+		strncpy_s(org_buf, len, buf, len);
 	} else {
 		buf_pointer = (char*)(gi->cache + (long)record_pointer);
 		len = sizeof(char) * (strlen(buf_pointer)+1);
 		org_buf = (char*)malloc(len);
-		strncpy(org_buf, buf_pointer, len);
+		strncpy_s(org_buf, len, buf_pointer, len);
 	}
 	return org_buf;
 }
