@@ -568,46 +568,46 @@ namespace libtorrent
 	std::wstring convert_to_wstring(std::string const& s)
 	{
 		std::wstring ret;
+
+		ret.reserve( s.size()+1 );
+
 		int result = libtorrent::utf8_wchar(s, ret);
 		if (result == 0) return ret;
 
 		ret.clear();
-		const char* end = &s[0] + s.size();
-		for (const char* i = &s[0]; i < end;)
+
+		if( s.empty() == false )
 		{
-			wchar_t c = '.';
-			result = std::mbtowc(&c, i, end - i);
-			if (result > 0) i += result;
-			else ++i;
-			ret += c;
+			ret.resize( s.size()+1, L' ' );
+			int newSize = MultiByteToWideChar( CP_ACP, 0, s.c_str(), s.size(), const_cast<wchar_t*>(ret.c_str()), ret.size()+1 );
+			if( newSize > 0 )
+				ret.resize(newSize);
 		}
+
 		return ret;
 	}
 
 	std::string convert_from_wstring(std::wstring const& s)
 	{
 		std::string ret;
+
+		ret.reserve(  s.size()*2 + 1 );
+
 		int result = libtorrent::wchar_utf8(s, ret);
 		if (result == 0) return ret;
-
 		ret.clear();
-		const wchar_t* end = &s[0] + s.size();
-		for (const wchar_t* i = &s[0]; i < end;)
+
+		if( !s.empty() )
 		{
-			char c[10];
-			TORRENT_ASSERT(sizeof(c) >= MB_CUR_MAX);
-			result = std::wctomb(c, *i);
-			if (result > 0)
+			int newSize = WideCharToMultiByte( CP_ACP, 0, s.c_str(), s.size(), 0, 0, 0, 0 );
+
+			if( newSize > 0 )
 			{
-				i += result;
-				ret.append(c, result);
-			}
-			else
-			{
-				++i;
-				ret += ".";
+				ret.resize( newSize, ' ' );
+				WideCharToMultiByte( CP_ACP, 0, s.c_str(), s.size(), const_cast<char*>( ret.c_str() ), ret.size()+1, 0, 0 );
 			}
 		}
+
 		return ret;
 	}
 #endif
@@ -665,27 +665,53 @@ namespace libtorrent
 
 	std::string convert_to_native(std::string const& s)
 	{
-		std::wstring ws;
-		libtorrent::utf8_wchar(s, ws);
-		std::size_t size = wcstombs(0, ws.c_str(), 0);
-		if (size == std::size_t(-1)) return s;
 		std::string ret;
-		ret.resize(size);
-		size = wcstombs(&ret[0], ws.c_str(), size + 1);
-		if (size == std::size_t(-1)) return s;
-		ret.resize(size);
-		return ret;
+		std::wstring ws;
+		
+		//libtorrent::utf8_wchar(s, ws);		
+		//std::size_t size = wcstombs(0, ws.c_str(), 0);
+		//if (size == std::size_t(-1)) return s;
+		//ret.resize(size);
+		//size = wcstombs(&ret[0], ws.c_str(), size + 1);
+		//if (size == std::size_t(-1)) return s;
+		//ret.resize(size);
+
+		if( libtorrent::utf8_wchar(s, ws) != 0 )
+		{
+			int size = WideCharToMultiByte( CP_ACP, 0, ws.c_str(), ws.size(), 0, 0, 0, 0 );
+
+			if( size > 0 )
+			{
+				ret.resize( size, ' ' );
+				WideCharToMultiByte( CP_ACP, 0, ws.c_str(), ws.size(), const_cast<char*>( ret.c_str() ), ret.size()+1, 0, 0 );
+
+				return ret;
+			}
+		}		
+		
+		return s;
 	}
 
 	std::string convert_from_native(std::string const& s)
 	{
-		std::wstring ws;
-		ws.resize(s.size());
-		std::size_t size = mbstowcs(&ws[0], s.c_str(), s.size());
-		if (size == std::size_t(-1)) return s;
 		std::string ret;
-		libtorrent::wchar_utf8(ws, ret);
-		return ret;
+		std::wstring ws;
+
+		if( !s.empty() )
+		{
+			ws.resize(s.size(), L' ');
+
+			//std::size_t size = mbstowcs(&ws[0], s.c_str(), s.size());
+			int size = MultiByteToWideChar( CP_ACP, 0, s.c_str(), s.size(), const_cast<wchar_t*>(ws.c_str()), ws.size()+1 );
+
+			if( size > 0 )
+			{
+				if( libtorrent::wchar_utf8(ws, ret) != 0 )
+					return ret;
+			}
+		}
+		
+		return s;
 	}
 
 #endif
