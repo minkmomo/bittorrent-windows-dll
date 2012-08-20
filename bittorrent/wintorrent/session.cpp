@@ -18,18 +18,25 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	void TorrentSession::Update() { impl_->Update(); }
+	void TorrentSession::update() { impl_->update(); }
 
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	bool TorrentSession::AddTorrent(std::string torrent) { return impl_->AddTorrent( torrent ); }
+	bool TorrentSession::add(std::string torrent) { return impl_->add( torrent ); }
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	bool TorrentSession::del(std::string torrent, bool delete_torrent_file, bool delete_download_file) { 
+		return impl_->del( torrent, delete_torrent_file, delete_download_file );
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	//
 
 
-	bool TorrentSession::SetSessionSetting( std::vector< std::string > const & params ) { return impl_->SetSessionSetting( params ); }
+	bool TorrentSession::setting( std::vector< std::string > const & params ) { return impl_->setting( params ); }
 
 	//////////////////////////////////////////////////////////////////////////
 }

@@ -18,6 +18,7 @@ namespace libtorrent
 	enum eTorrentEvent
 	{
 		torrent_event_finished,
+		torrent_event_add_failed,
 		torrent_event_max
 	};
 
@@ -34,9 +35,10 @@ namespace libtorrent
 	class TorrentSessionImplBase {
 	public:
 		virtual ~TorrentSessionImplBase() = 0 {};
-		virtual void Update() = 0;
-		virtual bool AddTorrent(std::string const & torrent) = 0;
-		virtual bool SetSessionSetting( std::vector<std::string> const & params, bool isFirst = false ) = 0;
+		virtual void update() = 0;
+		virtual bool add(std::string const & torrent) = 0;
+		virtual bool del(std::string const & torrent, bool delete_torrent_file, bool delete_download_file) = 0;
+		virtual bool setting( std::vector<std::string> const & params, bool isFirst = false ) = 0;
 	};
 
 	//////////////////////////////////////////////////////////////////////////
@@ -111,9 +113,10 @@ namespace libtorrent
 		TorrentSession( std::vector< std::string > const & sessionSettingParam, ErrorHandler error_handler, EventHandler event_handler, int listenPort = 6881 );
 		~TorrentSession();
 
-		void Update();
-		bool AddTorrent(std::string torrent);
-		bool SetSessionSetting( std::vector<std::string> const & params );
+		void update();
+		bool add(std::string torrent);
+		bool del( std::string torrent, bool delete_torrent_file, bool delete_download_file );
+		bool setting( std::vector<std::string> const & params );
 
 	private:
 		TorrentSessionImplBase * impl_;
