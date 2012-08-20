@@ -143,7 +143,7 @@ namespace libtorrent
 #ifdef TORRENT_WINDOWS
 	std::string convert_separators(std::string p)
 	{
-		for (int i = 0; i < p.size(); ++i)
+		for (size_t i = 0; i < p.size(); ++i)
 			if (p[i] == '/') p[i] = '\\';
 		return p;
 	}
@@ -423,7 +423,7 @@ namespace libtorrent
 			// we don't care about the last character, since it's OK for it
 			// to be a slash or a back slash
 			bool found = false;
-			for (int i = 2; i < f.size() - 1; ++i)
+			for (size_t i = 2; i < f.size() - 1; ++i)
 			{
 				if (f[i] != '\\' && f[i] != '/') continue;
 				// there is a directory separator in here,

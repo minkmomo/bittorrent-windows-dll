@@ -85,7 +85,7 @@ bool verify_rsa(sha1_hash const& digest
 
 	RSA_free(pub);
 
-	return ret;
+	return ret?true:false;
 }
 
 bool generate_rsa_keys(char* public_key, int* public_len

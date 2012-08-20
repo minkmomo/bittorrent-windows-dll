@@ -379,7 +379,7 @@ namespace libtorrent
 			{
 				// disconnecting the peer here may also delete the
 				// peer_info_struct. If that is the case, just continue
-				int count = m_peers.size();
+				size_t count = m_peers.size();
 				peer_connection* p = (*i)->connection;
 				
 				p->disconnect(errors::banned_by_ip_filter);

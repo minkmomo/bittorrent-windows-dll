@@ -901,7 +901,7 @@ namespace libtorrent
 			int res = GetIpForwardTable2(AF_UNSPEC, &routes);
 			if (res == NO_ERROR)
 			{
-				for (int i = 0; i < routes->NumEntries; ++i)
+				for (ULONG i = 0; i < routes->NumEntries; ++i)
 				{
 					ip_route r;
 					r.gateway = sockaddr_to_address((const sockaddr*)&routes->Table[i].NextHop);
@@ -956,7 +956,7 @@ namespace libtorrent
 
 		if (GetIpForwardTable(routes, &out_buf_size, FALSE) == NO_ERROR)
 		{
-			for (int i = 0; i < routes->dwNumEntries; ++i)
+			for (DWORD i = 0; i < routes->dwNumEntries; ++i)
 			{
 				ip_route r;
 				r.destination = inaddr_to_address((in_addr const*)&routes->table[i].dwForwardDest);

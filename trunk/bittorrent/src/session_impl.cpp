@@ -1479,7 +1479,7 @@ namespace aux {
 				int as_num = atoi(item.first.c_str());
 				if (item.second->type() != lazy_entry::int_t || item.second->int_value() == 0) continue;
 				int& peak = m_as_peak[as_num];
-				if (peak < item.second->int_value()) peak = item.second->int_value();
+				if (peak < item.second->int_value()) peak = (int)item.second->int_value();
 			}
 		}
 #endif

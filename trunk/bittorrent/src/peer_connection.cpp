@@ -4194,7 +4194,7 @@ namespace libtorrent
 		// if we can't read, it means we're blocked on the rate-limiter
 		// or the disk, not the peer itself. In this case, don't blame
 		// the peer and disconnect it
-		bool may_timeout = (m_channel_state[download_channel] & peer_info::bw_network);
+		bool may_timeout = (m_channel_state[download_channel] & peer_info::bw_network) ? true : false;
 
 		if (may_timeout && d > seconds(m_timeout) && !m_connecting)
 		{
@@ -4545,8 +4545,8 @@ namespace libtorrent
 		
 		boost::uint64_t upload_rate = int(m_statistics.upload_rate());
 
-		int buffer_size_watermark = upload_rate
-			* m_ses.settings().send_buffer_watermark_factor / 100;
+		int buffer_size_watermark = (int)(upload_rate
+			* m_ses.settings().send_buffer_watermark_factor / 100);
 
 		if (buffer_size_watermark < m_ses.settings().send_buffer_low_watermark)
 		{

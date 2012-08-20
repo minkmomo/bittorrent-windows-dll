@@ -439,9 +439,9 @@ namespace libtorrent
 			ec = error_code(errors::metadata_too_large, get_libtorrent_category());
 			return -2;
 		}
-		v.resize(s);
+		v.resize(size_t(s));
 		if (s == 0) return 0;
-		file::iovec_t b = {&v[0], s};
+		file::iovec_t b = {&v[0], size_t(s)};
 		size_type read = f.readv(0, &b, 1, ec);
 		if (read != s) return -3;
 		if (ec) return -3;
@@ -827,16 +827,24 @@ namespace libtorrent
 #ifdef TORRENT_USE_OPENSSL
 		m_ssl_root_cert.swap(ti.m_ssl_root_cert);
 #endif
-		boost::uint32_t tmp;
-		SWAP(m_multifile, ti.m_multifile);
-		SWAP(m_private, ti.m_private);
-		SWAP(m_i2p, ti.m_i2p);
-		swap(m_info_section, ti.m_info_section);
-		SWAP(m_info_section_size, ti.m_info_section_size);
-		swap(m_piece_hashes, ti.m_piece_hashes);
-		m_info_dict.swap(ti.m_info_dict);
-		swap(m_merkle_tree, ti.m_merkle_tree);
-		SWAP(m_merkle_first_leaf, ti.m_merkle_first_leaf);
+		
+		{
+			bool tmp;
+			SWAP(m_multifile, ti.m_multifile);
+			SWAP(m_private, ti.m_private);
+			SWAP(m_i2p, ti.m_i2p);
+		}	
+
+		{
+			boost::uint32_t tmp;
+			swap(m_info_section, ti.m_info_section);
+			SWAP(m_info_section_size, ti.m_info_section_size);
+			swap(m_piece_hashes, ti.m_piece_hashes);
+			m_info_dict.swap(ti.m_info_dict);
+			swap(m_merkle_tree, ti.m_merkle_tree);
+			SWAP(m_merkle_first_leaf, ti.m_merkle_first_leaf);
+		}
+		
 	}
 
 #undef SWAP
@@ -868,7 +876,7 @@ namespace libtorrent
 		ptrdiff_t info_ptr_diff = m_info_section.get() - section.first;
 
 		// extract piece length
-		int piece_length = info.dict_find_int_value("piece length", -1);
+		int piece_length = (int)info.dict_find_int_value("piece length", -1);
 		if (piece_length <= 0)
 		{
 			ec = errors::torrent_missing_piece_length;
@@ -1003,7 +1011,7 @@ namespace libtorrent
 			m_merkle_tree[0].assign(root_hash->string_ptr());
 		}
 
-		m_private = info.dict_find_int_value("private", 0);
+		m_private = info.dict_find_int_value("private", 0) ? true : false;
 
 #ifdef TORRENT_USE_OPENSSL
 		m_ssl_root_cert = info.dict_find_string_value("ssl-cert");

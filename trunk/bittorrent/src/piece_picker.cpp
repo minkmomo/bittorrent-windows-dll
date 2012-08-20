@@ -1380,7 +1380,7 @@ namespace libtorrent
 		// make this scale by the number of peers we have. For large
 		// scale clients, we would have more peers, and allow a higher
 		// threshold for the number of partials
-		if (m_downloads.size() > num_peers * 3 / 2) options |= prioritize_partials;
+		if ((int)m_downloads.size() > num_peers * 3 / 2) options |= prioritize_partials;
 
 		if (options & ignore_whole_pieces) prefer_whole_pieces = 0;
 
@@ -1418,8 +1418,8 @@ namespace libtorrent
 			{
 				if (!pieces[i->index]) continue;
 				if (m_piece_map[i->index].full
-					&& backup_blocks.size() >= num_blocks
-					&& backup_blocks2.size() >= num_blocks)
+					&& (int)backup_blocks.size() >= num_blocks
+					&& (int)backup_blocks2.size() >= num_blocks)
 					continue;
 
 				num_blocks = add_blocks_downloading(*i, pieces

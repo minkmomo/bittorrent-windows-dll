@@ -722,7 +722,7 @@ namespace libtorrent
 						progress_bar(progress, 100, color).c_str()
 						, pad_file?esc("34"):""
 						, progress / 10.f
-						, add_suffix(file_progress[i]).c_str()
+						, add_suffix((float)file_progress[i]).c_str()
 						, filename(info.files().file_path(info.file_at(i))).c_str()
 						, pad_file?esc("0"):"");
 					out += str;

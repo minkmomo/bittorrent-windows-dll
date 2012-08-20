@@ -2344,7 +2344,7 @@ bool utp_socket_impl::incoming_packet(char const* buf, int size
 		}
 		int next_extension = unsigned(*ptr++);
 		int len = unsigned(*ptr++);
-		if (ptr - buf + len > size_t(size))
+		if (size_t(ptr - buf + len) > size_t(size))
 		{
 			UTP_LOGV("%8p: invalid extension header size:%d packet:%d\n"
 				, this, len, int(ptr - buf));

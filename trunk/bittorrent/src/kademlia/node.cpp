@@ -908,7 +908,7 @@ void node_impl::incoming_request(msg const& m, entry& e)
 				dht_mutable_item to_add;
 				to_add.value = (char*)malloc(buf.second);
 				to_add.size = buf.second;
-				to_add.seq = msg_keys[2]->int_value();
+				to_add.seq = (int)msg_keys[2]->int_value();
 				memcpy(to_add.sig, msg_keys[4]->string_ptr(), sizeof(to_add.sig));
 				TORRENT_ASSERT(sizeof(to_add.sig) == msg_keys[4]->string_length());
 				memcpy(to_add.value, buf.first, buf.second);
@@ -936,7 +936,7 @@ void node_impl::incoming_request(msg const& m, entry& e)
 						item->value = (char*)malloc(buf.second);
 						item->size = buf.second;
 					}
-					item->seq = msg_keys[2]->int_value();
+					item->seq = (int)msg_keys[2]->int_value();
 					memcpy(item->sig, msg_keys[4]->string_ptr(), sizeof(item->sig));
 					TORRENT_ASSERT(sizeof(item->sig) == msg_keys[4]->string_length());
 					memcpy(item->value, buf.first, buf.second);
