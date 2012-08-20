@@ -51,13 +51,15 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	libtorrent::TorrentSession torrent_session( setting_params, error_handler, event_handler );
 
-	torrent_session.AddTorrent( test_torrent_name );
+	torrent_session.add( test_torrent_name );
 
 	while(!finish)
 	{
 		Sleep(1);
 
-		torrent_session.Update();
+		torrent_session.update();
+
+		//torrent_session.del( test_torrent_name, false, true );
 	}
 	
 

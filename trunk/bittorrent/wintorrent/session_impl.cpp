@@ -112,15 +112,15 @@ namespace libtorrent
 			+ alert::debug_notification
 			+ alert::stats_notification))
 	{
-		LoadSetting();
+		load_setting();
 
-		SetSessionSetting( sessionSettingParam, true );
+		setting( sessionSettingParam, true );
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	bool TorrentSessionImpl::AddTorrent( std::string const & torrent )
+	bool TorrentSessionImpl::add( std::string const & torrent )
 	{
 		error_code ec;
 
@@ -144,6 +144,10 @@ namespace libtorrent
 			p.flags |= add_torrent_params::flag_paused;
 			p.flags &= ~add_torrent_params::flag_duplicate_is_error;
 			p.flags |= add_torrent_params::flag_auto_managed;
+
+			std::string tag;
+			tag += "@tag:" + torrent;
+			p.userdata = (void*)_strdup( tag.c_str() );
 
 			session_.async_add_torrent( p );
 		}
@@ -175,13 +179,20 @@ namespace libtorrent
 					p.resume_data = &buf;
 			}
 
+			std::string tag;
+			tag += "@tag:" + torrent;
+			p.userdata = (void*)_strdup( tag.c_str() );
+
 			//printf("adding URL: %s\n", torrent.c_str());
 			session_.async_add_torrent(p);
 		}
 		else
 		{
 			// if it's a torrent file, open it as usual
-			return LoadTorrent( torrent );
+			if( load_torrent( torrent ) )
+			{
+				return true;
+			}
 		}
 
 		return true;
@@ -190,7 +201,7 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	bool TorrentSessionImpl::LoadTorrent( std::string const & torrent )
+	bool TorrentSessionImpl::load_torrent( std::string const & torrent )
 	{
 		boost::intrusive_ptr<torrent_info> t;
 		error_code ec;
@@ -224,7 +235,12 @@ namespace libtorrent
 		p.flags |= add_torrent_params::flag_paused;
 		p.flags &= ~add_torrent_params::flag_duplicate_is_error;
 		p.flags |= add_torrent_params::flag_auto_managed;
-		p.userdata = (void*)strdup(torrent.c_str());
+
+		std::string tag;
+
+		tag += "@isfile@tag:" + torrent;
+
+		p.userdata = (void*)_strdup(tag.c_str());
 		session_.async_add_torrent(p);
 
 		return true;
@@ -233,7 +249,67 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	bool TorrentSessionImpl::SetSessionSetting( std::vector<std::string> const & params, bool isFirst )
+	bool TorrentSessionImpl::del( std::string const & torrent, bool delete_torrent_file, bool delete_download_file )
+	{
+		auto i = torrents_.find( torrent );
+
+		if( i == torrents_.end() )
+			return false;
+
+		torrent_handle const & handle = i->second;
+
+
+		auto status = std::find_if( torrent_statuses_.begin(), torrent_statuses_.end()
+			, [&handle](TorrentStatuses::value_type const & v)->bool{ return v.handle == handle; } );
+
+		if( status != torrent_statuses_.end() )
+			torrent_statuses_.erase(status);
+
+
+		auto file = std::find_if( files_.begin(), files_.end()
+			, [&handle]( FileHandles::value_type const & v )->bool{ return v.second == handle; } );
+
+		if( file != files_.end() )
+		{
+			error_code ec;
+
+			// also delete the .torrent file from the torrent directory
+			if( delete_torrent_file )
+			{
+				remove(combine_path(monitor_dir_, file->first), ec);
+				remove(combine_path("", file->first), ec);
+			}
+
+			//if (ec)
+			//	printf("failed to delete .torrent file: %s\n", ec.message().c_str());
+
+			files_.erase(file);
+		}
+
+
+		auto non_file = std::find_if( non_files_.begin(), non_files_.end()
+			, [&handle]( NonFileHandles::value_type const & v )->bool{ return v == handle; } );
+
+		if( non_file != non_files_.end() )
+		{
+			non_files_.erase(non_file);
+		}
+
+
+		if( handle.is_valid() )
+		{
+			session_.remove_torrent( handle, delete_download_file ? session::delete_files : session::none );
+		}
+
+		torrents_.erase(i);
+
+		return true;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	bool TorrentSessionImpl::setting( std::vector<std::string> const & params, bool isFirst )
 	{
 		error_code ec;
 
@@ -459,7 +535,7 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	void TorrentSessionImpl::LoadSetting()
+	void TorrentSessionImpl::load_setting()
 	{
 		std::vector<char> in;
 		error_code ec;
@@ -622,7 +698,7 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	void TorrentSessionImpl::Update()
+	void TorrentSessionImpl::update()
 	{
 		session_.post_torrent_updates();
 
@@ -635,7 +711,7 @@ namespace libtorrent
 			bool need_resort = false;
 			TORRENT_TRY
 			{
-				if (!handle_alert(session_, *i, files_, non_files_, all_handles_))
+				if (!handle_alert( *i ))
 				{
 					// if we didn't handle the alert, print it to the log
 					std::string event_string;
@@ -659,7 +735,7 @@ namespace libtorrent
 
 		PeerInfos peer_infos;
 
-		for( auto status = all_handles_.begin(); status != all_handles_.end(); ++status )
+		for( auto status = torrent_statuses_.begin(); status != torrent_statuses_.end(); ++status )
 		{
 			if( !status->handle.is_valid() )
 				continue;
@@ -740,7 +816,7 @@ namespace libtorrent
 		if (!monitor_dir_.empty()
 			&& next_dir_scan_ < time_now())
 		{
-			ScanDir();
+			scan_dir();
 
 			next_dir_scan_ = time_now() + seconds(poll_interval_);
 		}
@@ -749,7 +825,7 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	void TorrentSessionImpl::ScanDir()
+	void TorrentSessionImpl::scan_dir()
 	{
 		std::set<std::string> valid;
 
@@ -765,7 +841,7 @@ namespace libtorrent
 			std::string file = combine_path(monitor_dir_, i.file());
 			if (extension(file) != ".torrent") continue;
 
-			handles_t::iterator k = files_.find(file);
+			FileHandles::iterator k = files_.find(file);
 			if (k != files_.end())
 			{
 				valid.insert(file);
@@ -774,13 +850,13 @@ namespace libtorrent
 
 			// the file has been added to the dir, start
 			// downloading it.
-			AddTorrent(file);
+			add(file);
 			valid.insert(file);
 		}
 
 		// remove the torrents that are no longer in the directory
 
-		for (handles_t::iterator i = files_.begin(); !files_.empty() && i != files_.end();)
+		for (FileHandles::iterator i = files_.begin(); !files_.empty() && i != files_.end();)
 		{
 			if (i->first.empty() || valid.find(i->first) != valid.end())
 			{
@@ -812,7 +888,7 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	void TorrentSessionImpl::SaveSetting()
+	void TorrentSessionImpl::save_setting()
 	{
 		// keep track of the number of resume data
 		// alerts to wait for
@@ -910,9 +986,7 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	bool TorrentSessionImpl::handle_alert( libtorrent::session& ses, libtorrent::alert* a
-		, handles_t & files, std::set<libtorrent::torrent_handle>& non_files
-		, TorrentHandles & all_handles )
+	bool TorrentSessionImpl::handle_alert( libtorrent::alert* a )
 	{
 		using namespace libtorrent;
 
@@ -966,34 +1040,46 @@ namespace libtorrent
 				filename = combine_path(monitor_dir_, filename);
 				save_file(filename, buffer);
 
-				files.insert(std::pair<std::string, libtorrent::torrent_handle>(filename, h));
-				non_files.erase(h);
+				files_.insert(std::pair<std::string, libtorrent::torrent_handle>(filename, h));
+				non_files_.erase(h);
 			}
 		}
 		else if (add_torrent_alert* p = alert_cast<add_torrent_alert>(a))
 		{
-			std::string filename;
+			std::string tag;
 			if (p->params.userdata)
 			{
-				filename = (char*)p->params.userdata;
+				tag = (char*)p->params.userdata;
 				free(p->params.userdata);
 			}
 
 			if (p->error)
 			{
 				//fprintf(stderr, "failed to add torrent: %s %s\n", filename.c_str(), p->error.message().c_str());
-				//char msg[1024];
-				//sprintf_s( msg, sizeof(msg), "failed to add torrent: %s %s\n", filename.c_str(), p->error.message().c_str());
-				//error_handler_( 0, msg );
+				char msg[1024];
+				sprintf_s( msg, sizeof(msg), "failed to add torrent: %s %s\n", tag.c_str(), p->error.message().c_str());
+				event_handler_( torrent_event_add_failed, msg );
 			}
 			else
 			{
 				torrent_handle h = p->handle;
 
-				if (!filename.empty())
-					files.insert(std::pair<const std::string, torrent_handle>(filename, h));
+				std::string filename;
+
+				bool isFile = tag.find( "@isfile" ) != std::string::npos;
+
+				tag = tag.substr( tag.find("@tag:")+5, std::string::npos );
+
+				torrents_.insert( std::make_pair( tag, h ) );
+
+				if (isFile)
+				{
+					files_.insert(std::make_pair(tag, h));
+				}
 				else
-					non_files.insert(h);
+				{
+					non_files_.insert(h);
+				}
 
 				h.set_max_connections(max_connections_per_torrent_);
 				h.set_max_uploads(-1);
@@ -1019,7 +1105,7 @@ namespace libtorrent
 					}
 				}
 
-				all_handles.insert(h.status());
+				torrent_statuses_.insert(h.status());
 			}
 		}
 		else if (torrent_finished_alert* p = alert_cast<torrent_finished_alert>(a))
@@ -1046,10 +1132,10 @@ namespace libtorrent
 				bencode(std::back_inserter(out), *p->resume_data);
 				save_file(combine_path(h.save_path(), combine_path(".resume", to_hex(h.info_hash().to_string()) + ".resume")), out);
 				if (h.is_valid()
-					&& non_files.find(h) == non_files.end()
-					&& std::find_if(files.begin(), files.end()
-					, boost::bind(&handles_t::value_type::second, _1) == h) == files.end())
-					ses.remove_torrent(h);
+					&& non_files_.find(h) == non_files_.end()
+					&& std::find_if(files_.begin(), files_.end()
+					, boost::bind(&FileHandles::value_type::second, _1) == h) == files_.end())
+					session_.remove_torrent(h);
 			}
 		}
 		else if (save_resume_data_failed_alert* p = alert_cast<save_resume_data_failed_alert>(a))
@@ -1057,10 +1143,10 @@ namespace libtorrent
 			--num_outstanding_resume_data_;
 			torrent_handle h = p->handle;
 			if (h.is_valid()
-				&& non_files.find(h) == non_files.end()
-				&& std::find_if(files.begin(), files.end()
-				, boost::bind(&handles_t::value_type::second, _1) == h) == files.end())
-				ses.remove_torrent(h);
+				&& non_files_.find(h) == non_files_.end()
+				&& std::find_if(files_.begin(), files_.end()
+				, boost::bind(&FileHandles::value_type::second, _1) == h) == files_.end())
+				session_.remove_torrent(h);
 		}
 		else if (torrent_paused_alert* p = alert_cast<torrent_paused_alert>(a))
 		{
@@ -1077,10 +1163,10 @@ namespace libtorrent
 			for (std::vector<torrent_status>::iterator i = p->status.begin();
 				i != p->status.end(); ++i)
 			{
-				TorrentHandles::iterator j = all_handles.find(*i);
+				TorrentStatuses::iterator j = torrent_statuses_.find(*i);
 				// don't add new entries here, that's done in the handler
 				// for add_torrent_alert
-				if (j == all_handles.end()) continue;
+				if (j == torrent_statuses_.end()) continue;
 				if (j->state != i->state
 					|| j->paused != i->paused
 					|| j->auto_managed != i->auto_managed)
@@ -1098,7 +1184,7 @@ namespace libtorrent
 
 	TorrentSessionImpl::~TorrentSessionImpl()
 	{
-		SaveSetting();
+		save_setting();
 	}
 
 	//////////////////////////////////////////////////////////////////////////

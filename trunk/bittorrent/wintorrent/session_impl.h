@@ -33,36 +33,32 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	typedef boost::unordered_set<torrent_status> TorrentHandles;
-	typedef std::multimap<std::string, libtorrent::torrent_handle> handles_t;
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-
 	class TorrentSessionImpl : public TorrentSessionImplBase
 	{
 	public:
+		typedef boost::unordered_set<torrent_status> TorrentStatuses;
+		typedef std::multimap<std::string, torrent_handle> FileHandles;
+		typedef std::set<torrent_handle> NonFileHandles;
+		typedef std::map< std::string, torrent_handle > Torrents;
+
 		TorrentSessionImpl(int listenPort, std::vector<std::string> const & sessionSettingParam, ErrorHandler error_handler, EventHandler event_handler );
 
 		virtual ~TorrentSessionImpl();
 
-		virtual void Update();
-
-		virtual bool AddTorrent(std::string const & torrent);
-
-		virtual bool SetSessionSetting( std::vector<std::string> const & params, bool isFirst = false );
+		virtual void update();
+		virtual bool add(std::string const & torrent);
+		virtual bool del(std::string const & torrent, bool delete_torrent_file, bool delete_download_file);
+		virtual bool setting( std::vector<std::string> const & params, bool isFirst = false );
 
 	private:
-		bool LoadTorrent( std::string const & torrent );
-		void LoadSetting();
-		void ScanDir();
-		void SaveSetting();
+		bool load_torrent( std::string const & torrent );
+		void load_setting();
+		void scan_dir();
+		void save_setting();
 
 		// returns true if the alert was handled (and should not be printed to the log)
 		// returns false if the alert was not handled
-		bool handle_alert( libtorrent::session& ses, libtorrent::alert* a
-			, handles_t & files, std::set<libtorrent::torrent_handle>& non_files
-			, TorrentHandles & all_handles );
+		bool handle_alert( libtorrent::alert* a );
 
 		session session_;
 		session_settings session_settings_;
@@ -100,15 +96,15 @@ namespace libtorrent
 		// it was added through the directory monitor. It is used to
 		// be able to remove torrents that were added via the directory
 		// monitor when they're not in the directory anymore.		
-		TorrentHandles all_handles_;
+		TorrentStatuses torrent_statuses_;
 		//FilteredHandles filtered_handles_;
 
 		// maps filenames to torrent_handles		
-		handles_t files_;
+		FileHandles files_;
 		// torrents that were not added via the monitor dir
-		std::set<torrent_handle> non_files_;
+		NonFileHandles non_files_;
 
-		//int active_torrent_;
+		Torrents torrents_;
 
 		ptime next_dir_scan_;
 
