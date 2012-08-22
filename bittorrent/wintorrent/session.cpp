@@ -35,6 +35,19 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
+	bool TorrentSession::pause( std::string torrent ) {
+		return impl_->pause( torrent );
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	bool TorrentSession::resume( std::string torrent ) {
+		return impl_->resume( torrent );
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
 
 	bool TorrentSession::setting( std::vector< std::string > const & params ) { return impl_->setting( params ); }
 

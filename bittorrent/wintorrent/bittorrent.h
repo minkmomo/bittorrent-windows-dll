@@ -32,14 +32,7 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	class TorrentSessionImplBase {
-	public:
-		virtual ~TorrentSessionImplBase() = 0 {};
-		virtual void update() = 0;
-		virtual bool add(std::string const & torrent) = 0;
-		virtual bool del(std::string const & torrent, bool delete_torrent_file, bool delete_download_file) = 0;
-		virtual bool setting( std::vector<std::string> const & params, bool isFirst = false ) = 0;
-	};
+	class TorrentSessionImplBase;
 
 	//////////////////////////////////////////////////////////////////////////
 	//
@@ -116,6 +109,8 @@ namespace libtorrent
 		void update();
 		bool add(std::string torrent);
 		bool del( std::string torrent, bool delete_torrent_file, bool delete_download_file );
+		bool pause( std::string torrent );
+		bool resume( std::string torrent );
 		bool setting( std::vector<std::string> const & params );
 
 	private:
@@ -142,6 +137,20 @@ namespace libtorrent
 		, bool use_merklefile = false, std::string root_cert = ""
 		, int pad_file_limit = -1, int piece_size = 0, bool inc_sha1_hash = true
 		, bool dont_follow_symlinks = false );
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	class TorrentSessionImplBase {
+	public:
+		virtual ~TorrentSessionImplBase() = 0 {};
+		virtual void update() = 0;
+		virtual bool add(std::string const & torrent) = 0;
+		virtual bool del(std::string const & torrent, bool delete_torrent_file, bool delete_download_file) = 0;
+		virtual bool pause(std::string const & torrent) = 0;
+		virtual bool resume(std::string const & torrent) = 0;
+		virtual bool setting( std::vector<std::string> const & params, bool isFirst = false ) = 0;
+	};
 
 	//////////////////////////////////////////////////////////////////////////
 }

@@ -53,13 +53,21 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	torrent_session.add( test_torrent_name );
 
+	torrent_session.add( "magnet:?xt=urn:btih:E578B9873C12C393C2B2B07E21668C1498D88CA4&dn=%eb%82%98%eb%8a%94%20%ea%bc%bc%ec%88%98%eb%8b%a4%20-%20%eb%b4%89%ec%a3%bc17%ed%9a%8c.mp3&tr=udp%3a//tracker.openbittorrent.com%3a80/announce" );
+
+	torrent_session.add( "test3.torrent" );
+
+
+
 	while(!finish)
 	{
 		Sleep(1);
 
 		torrent_session.update();
 
-		//torrent_session.del( test_torrent_name, false, true );
+		torrent_session.del( test_torrent_name, false, false );
+
+		torrent_session.add( test_torrent_name );
 	}
 	
 

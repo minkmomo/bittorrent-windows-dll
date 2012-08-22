@@ -5,6 +5,15 @@
     <ClInclude Include="session_impl.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="lexical_cast.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="tuple_map.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="debug_print.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
