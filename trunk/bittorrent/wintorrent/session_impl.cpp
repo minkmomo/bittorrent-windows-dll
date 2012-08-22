@@ -940,13 +940,13 @@ namespace libtorrent
 				tag = tag.substr( tag.find("@tag:")+5, std::string::npos );
 
 
-				auto insert_result = torrents_.insert(tag, TorrentEntry(h) );
+				auto insert_faile = torrents_.insert(tag, TorrentEntry(h) );
 
 				auto entry = torrents_.find< 1 >(TorrentEntry(h));
 
 				torrent_tags_[ tag ] = std::tr1::get<0>( *entry );
 
-				if( insert_result )
+				if( !insert_faile )
 				{
 					if (isFile)
 					{
