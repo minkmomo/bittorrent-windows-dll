@@ -83,6 +83,8 @@ namespace libtorrent
 		virtual bool pause(std::string const & torrent);
 		virtual bool resume( std::string const & torrent );
 		virtual bool setting( std::vector<std::string> const & params, bool isFirst = false );
+		virtual void set_print_debug( bool print );
+		virtual std::string const & get_tag( std::string const & torrent );
 
 	private:
 		bool load_torrent( std::string const & torrent );
@@ -138,6 +140,8 @@ namespace libtorrent
 		ptime next_dir_scan_;
 
 		int num_outstanding_resume_data_;
+
+		bool print_debug_;
 	};
 
 	//////////////////////////////////////////////////////////////////////////

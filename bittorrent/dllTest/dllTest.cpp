@@ -50,6 +50,8 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	libtorrent::TorrentSession torrent_session( setting_params, error_handler, event_handler );
 
+	torrent_session.set_print_debug( true );
+
 	torrent_session.add( test_torrent_name );
 
 	while(!finish)
