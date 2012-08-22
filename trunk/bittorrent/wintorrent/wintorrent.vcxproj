@@ -75,7 +75,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;WINTORRENT_EXPORTS;%(PreprocessorDefinitions);BOOST_ASIO_SEPARATE_COMPILATION;_COMPLING_BITTORRENT_DLL_;TORRENT_USE_OPENSSL;TORRENT_DISABLE_GEO_IP</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;WINTORRENT_EXPORTS;%(PreprocessorDefinitions);BOOST_ASIO_SEPARATE_COMPILATION;_COMPLING_BITTORRENT_DLL_;TORRENT_USE_OPENSSL;TORRENT_DISABLE_GEO_IP;_PRINT_DEBUG</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
