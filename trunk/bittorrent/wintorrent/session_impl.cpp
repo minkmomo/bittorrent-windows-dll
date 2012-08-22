@@ -27,6 +27,7 @@ namespace libtorrent
 		//, active_torrent_(0)
 		, next_dir_scan_(time_now())
 		, num_outstanding_resume_data_(0)
+		, print_debug_(false)
 		, session_(fingerprint("LT", LIBTORRENT_VERSION_MAJOR, LIBTORRENT_VERSION_MINOR, 0, 0)
 			, session::add_default_plugins
 			, alert::all_categories
@@ -565,7 +566,9 @@ namespace libtorrent
 
 	void TorrentSessionImpl::print_debug()
 	{
-#ifdef _PRINT_DEBUG
+		if( !print_debug_ )
+			return;
+
 		std::string out;
 
 		char str[1024];
@@ -650,7 +653,6 @@ namespace libtorrent
 		clear_home();
 		puts(out.c_str());
 		fflush(stdout);
-#endif
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1059,6 +1061,22 @@ namespace libtorrent
 	TorrentSessionImpl::~TorrentSessionImpl()
 	{
 		save_setting();
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	std::string const & TorrentSessionImpl::get_tag( std::string const & torrent )
+	{
+		return torrent_tags_[torrent];
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	void TorrentSessionImpl::set_print_debug( bool print )
+	{
+		print_debug_ = print;
 	}
 
 	//////////////////////////////////////////////////////////////////////////

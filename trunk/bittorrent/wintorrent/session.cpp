@@ -49,7 +49,23 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	bool TorrentSession::setting( std::vector< std::string > const & params ) { return impl_->setting( params ); }
+	bool TorrentSession::setting( std::vector< std::string > const & params ) {
+		return impl_->setting( params );
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	void TorrentSession::set_print_debug( bool print ) {
+		impl_->set_print_debug( print );
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	std::string TorrentSession::get_tag( std::string torrent ) {
+		return impl_->get_tag( torrent );
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 }

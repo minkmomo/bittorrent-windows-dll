@@ -113,6 +113,9 @@ namespace libtorrent
 		bool resume( std::string torrent );
 		bool setting( std::vector<std::string> const & params );
 
+		void set_print_debug( bool print );
+		std::string get_tag( std::string torrent );
+
 	private:
 		TorrentSessionImplBase * impl_;
 	};
@@ -150,6 +153,8 @@ namespace libtorrent
 		virtual bool pause(std::string const & torrent) = 0;
 		virtual bool resume(std::string const & torrent) = 0;
 		virtual bool setting( std::vector<std::string> const & params, bool isFirst = false ) = 0;
+		virtual void set_print_debug( bool print ) = 0;
+		virtual std::string const & get_tag( std::string const & torrent ) = 0;
 	};
 
 	//////////////////////////////////////////////////////////////////////////
