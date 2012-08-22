@@ -58,6 +58,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	torrent_session.add( "test3.torrent" );
 
 
+	bool pause_result = false;
+	bool resume_result = false;
+
+	size_t test_count = 0;
 
 	while(!finish)
 	{
@@ -65,9 +69,25 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		torrent_session.update();
 
-		torrent_session.del( test_torrent_name, false, false );
-
-		torrent_session.add( test_torrent_name );
+		if( test_count++ < 100 )
+		{
+			//if( !pause_result )
+			{
+				//pause_result = torrent_session.pause( "magnet:?xt=urn:btih:E578B9873C12C393C2B2B07E21668C1498D88CA4&dn=%eb%82%98%eb%8a%94%20%ea%bc%bc%ec%88%98%eb%8b%a4%20-%20%eb%b4%89%ec%a3%bc17%ed%9a%8c.mp3&tr=udp%3a//tracker.openbittorrent.com%3a80/announce" );
+				//pause_result = torrent_session.pause( "magnet:?xt=urn:btih:E578B9873C12C393C2B2B07E21668C1498D88CA4&dn=%eb%82%98%eb%8a%94%20%ea%bc%bc%ec%88%98%eb%8b%a4%20-%20%eb%b4%89%ec%a3%bc17%ed%9a%8c.mp3&tr=udp%3a//tracker.openbittorrent.com%3a80/announce" );
+			}
+			//else if( !resume_result )
+			{
+				resume_result = torrent_session.resume( "magnet:?xt=urn:btih:E578B9873C12C393C2B2B07E21668C1498D88CA4&dn=%eb%82%98%eb%8a%94%20%ea%bc%bc%ec%88%98%eb%8b%a4%20-%20%eb%b4%89%ec%a3%bc17%ed%9a%8c.mp3&tr=udp%3a//tracker.openbittorrent.com%3a80/announce" );
+			}
+		}
+		else if( !pause_result )
+		{
+			pause_result = torrent_session.pause( "magnet:?xt=urn:btih:E578B9873C12C393C2B2B07E21668C1498D88CA4&dn=%eb%82%98%eb%8a%94%20%ea%bc%bc%ec%88%98%eb%8b%a4%20-%20%eb%b4%89%ec%a3%bc17%ed%9a%8c.mp3&tr=udp%3a//tracker.openbittorrent.com%3a80/announce" );
+			resume_result = torrent_session.resume( "magnet:?xt=urn:btih:E578B9873C12C393C2B2B07E21668C1498D88CA4&dn=%eb%82%98%eb%8a%94%20%ea%bc%bc%ec%88%98%eb%8b%a4%20-%20%eb%b4%89%ec%a3%bc17%ed%9a%8c.mp3&tr=udp%3a//tracker.openbittorrent.com%3a80/announce" );
+		}
+		
+		//torrent_session.pause( test_torrent_name );
 	}
 	
 
