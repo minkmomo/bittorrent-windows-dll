@@ -174,7 +174,9 @@ namespace libtorrent
 
 	bool TorrentSessionImpl::del( std::string const & torrent, bool delete_torrent_file, bool delete_download_file )
 	{
-		auto entry = torrents_.find_iter<0>( torrent );
+		std::string const & org_tag = torrent_tags_[torrent];
+
+		auto entry = torrents_.find_iter<0>( org_tag );
 
 		if( entry == torrents_.end<0>() )
 			return false;
@@ -184,7 +186,7 @@ namespace libtorrent
 		non_files_.erase(handle);
 		
 		
-		auto file = files_.find_iter<0>( torrent );
+		auto file = files_.find_iter<0>( org_tag );
 
 		if( file != files_.end<0>() )
 		{
@@ -206,6 +208,9 @@ namespace libtorrent
 
 		torrents_.erase<0>(entry);
 
+		torrent_tags_.erase( torrent_tags_.find( org_tag ) );
+		torrent_tags_.erase( torrent_tags_.find( torrent ) );
+
 		return true;
 	}
 
@@ -213,8 +218,29 @@ namespace libtorrent
 	//
 
 	bool TorrentSessionImpl::pause( std::string const & torrent )
-	{		
-		return true;
+	{
+		std::string const & org_tag = torrent_tags_[torrent];
+
+		auto entry = torrents_.find<0>(org_tag);
+
+		if( entry )
+		{
+			torrent_status const & status = std::tr1::get<1>( *entry ).status_;
+
+			//if( !status.auto_managed && status.paused )
+			//{
+			//	status.handle.auto_managed( true );
+			//}
+			//else
+			{
+				status.handle.auto_managed( false );
+				status.handle.pause(torrent_handle::graceful_pause);
+			}
+
+			return true;
+		}
+
+		return false;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -222,7 +248,26 @@ namespace libtorrent
 
 	bool TorrentSessionImpl::resume( std::string const & torrent )
 	{
-		return true;
+		std::string const & org_tag = torrent_tags_[torrent];
+
+		auto entry = torrents_.find<0>( org_tag );
+
+		if( entry )
+		{
+			torrent_status const & status = std::tr1::get<1>(*entry).status_;
+
+			//status.handle.auto_managed(!status.auto_managed);
+			status.handle.auto_managed( true );
+
+			if( status.auto_managed && status.paused )
+			{
+				status.handle.resume();
+			}
+
+			return true;
+		}
+
+		return false;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -501,10 +546,26 @@ namespace libtorrent
 			delete *i;
 		}
 		alerts.clear();
+			
+
+		print_debug();
 
 
-		
+		if (!monitor_dir_.empty()
+			&& next_dir_scan_ < time_now())
+		{
+			scan_dir();
 
+			next_dir_scan_ = time_now() + seconds(poll_interval_);
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	void TorrentSessionImpl::print_debug()
+	{
+#ifdef _PRINT_DEBUG
 		std::string out;
 
 		char str[1024];
@@ -525,7 +586,7 @@ namespace libtorrent
 			out += " ======\n";
 
 			//if( status->state != torrent_status::seeding )
-				handle.get_peer_info( peer_infos );
+			handle.get_peer_info( peer_infos );
 
 			if( peer_infos.empty() == false )
 			{
@@ -577,7 +638,7 @@ namespace libtorrent
 						, pad_file?esc("34"):""
 						, progress / 10.f
 						, add_suffix((float)file_progress[i]).c_str()
-						, filename(info.files().file_path(info.file_at(i))).c_str()
+						, convert_from_native( filename(info.files().file_path(info.file_at(i))) ).c_str()
 						, pad_file?esc("0"):"");
 					out += str;
 				}
@@ -589,15 +650,7 @@ namespace libtorrent
 		clear_home();
 		puts(out.c_str());
 		fflush(stdout);
-
-
-		if (!monitor_dir_.empty()
-			&& next_dir_scan_ < time_now())
-		{
-			scan_dir();
-
-			next_dir_scan_ = time_now() + seconds(poll_interval_);
-		}
+#endif
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -884,40 +937,48 @@ namespace libtorrent
 
 				tag = tag.substr( tag.find("@tag:")+5, std::string::npos );
 
-				if (isFile)
-				{
-					files_.insert( tag, TorrentFile( tag, h ) );
-				}
-				else
-				{
-					non_files_.insert(h);
-				}
 
-				h.set_max_connections(max_connections_per_torrent_);
-				h.set_max_uploads(-1);
-				h.set_upload_limit(torrent_upload_limit_);
-				h.set_download_limit(torrent_download_limit_);
-				h.use_interface(outgoing_interface_.c_str());
+				auto insert_result = torrents_.insert(tag, TorrentEntry(h) );
+
+				auto entry = torrents_.find< 1 >(TorrentEntry(h));
+
+				torrent_tags_[ tag ] = std::tr1::get<0>( *entry );
+
+				if( insert_result )
+				{
+					if (isFile)
+					{
+						files_.insert( tag, TorrentFile( tag, h ) );
+					}
+					else
+					{
+						non_files_.insert(h);
+					}
+
+					h.set_max_connections(max_connections_per_torrent_);
+					h.set_max_uploads(-1);
+					h.set_upload_limit(torrent_upload_limit_);
+					h.set_download_limit(torrent_download_limit_);
+					h.use_interface(outgoing_interface_.c_str());
 #ifndef TORRENT_DISABLE_RESOLVE_COUNTRIES
-				h.resolve_countries(true);
+					h.resolve_countries(true);
 #endif
 
-				// if we have a peer specified, connect to it
-				if (!peer_.empty())
-				{
-					char* port = (char*) strrchr((char*)peer_.c_str(), ':');
-					if (port > 0)
+					// if we have a peer specified, connect to it
+					if (!peer_.empty())
 					{
-						*port++ = 0;
-						char const* ip = peer_.c_str();
-						int peer_port = atoi(port);
-						error_code ec;
-						if (peer_port > 0)
-							h.connect_peer(tcp::endpoint(address::from_string(ip, ec), peer_port));
+						char* port = (char*) strrchr((char*)peer_.c_str(), ':');
+						if (port > 0)
+						{
+							*port++ = 0;
+							char const* ip = peer_.c_str();
+							int peer_port = atoi(port);
+							error_code ec;
+							if (peer_port > 0)
+								h.connect_peer(tcp::endpoint(address::from_string(ip, ec), peer_port));
+						}
 					}
 				}
-
-				torrents_.insert(tag, TorrentEntry(h) );
 			}
 		}
 		else if (torrent_finished_alert* p = alert_cast<torrent_finished_alert>(a))

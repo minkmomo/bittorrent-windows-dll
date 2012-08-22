@@ -71,6 +71,7 @@ namespace libtorrent
 		typedef tuple_map< std::string, TorrentEntry > Torrents; // first : tag, second : entry
 		typedef tuple_map< std::string, TorrentFile > FileHandles; // first : filepath, second : handle
 		typedef boost::unordered_set<torrent_handle> NonFileHandles;
+		typedef std::map< std::string, std::string > TorrentTags; // first : overlaped tag, second : org tag;
 
 		TorrentSessionImpl(int listenPort, std::vector<std::string> const & sessionSettingParam, ErrorHandler error_handler, EventHandler event_handler );
 
@@ -86,13 +87,14 @@ namespace libtorrent
 	private:
 		bool load_torrent( std::string const & torrent );
 		void load_setting();
+		void print_debug();
 		void scan_dir();
 		void save_setting();
 
 		// returns true if the alert was handled (and should not be printed to the log)
 		// returns false if the alert was not handled
 		bool handle_alert( libtorrent::alert* a );
-
+		
 		session session_;
 		session_settings session_settings_;
 		proxy_settings proxy_settings_;
@@ -130,6 +132,8 @@ namespace libtorrent
 		FileHandles files_;
 		// torrents that were not added via the monitor dir
 		NonFileHandles non_files_;
+
+		TorrentTags torrent_tags_;
 
 		ptime next_dir_scan_;
 
