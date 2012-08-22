@@ -45,7 +45,7 @@
     <LibraryPath>..\lib\;$(LibraryPath)</LibraryPath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
     <IncludePath>..\include;$(IncludePath)</IncludePath>
-    <OutDir>..\dll</OutDir>
+    <OutDir>..\dll\</OutDir>
     <TargetName>bittorrent_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -53,7 +53,7 @@
     <LibraryPath>..\lib\;$(LibraryPath)</LibraryPath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
     <IncludePath>..\include;$(IncludePath)</IncludePath>
-    <OutDir>..\dll</OutDir>
+    <OutDir>..\dll\</OutDir>
     <TargetName>bittorrent</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -86,7 +86,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="bittorrent.h" />
+    <ClInclude Include="debug_print.hpp" />
+    <ClInclude Include="lexical_cast.hpp" />
     <ClInclude Include="session_impl.h" />
+    <ClInclude Include="tuple_map.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="session.cpp" />

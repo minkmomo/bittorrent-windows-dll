@@ -28,18 +28,49 @@
 #include <boost/bind.hpp>
 #include <boost/unordered_set.hpp>
 
+#include "tuple_map.hpp"
+
 namespace libtorrent
 {
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	struct TorrentEntry
+	{
+		TorrentEntry() {}
+		TorrentEntry( torrent_handle & handle ) : handle_(handle), status_(handle.status()) {}
+
+		torrent_status status_;
+		torrent_handle handle_;
+
+		bool operator<( TorrentEntry const & other ) const { return handle_ < other.handle_; }
+		bool operator==( TorrentEntry const & other ) const { return handle_ == other.handle_; }
+	};
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	struct TorrentFile
+	{
+		TorrentFile() {}
+		TorrentFile( std::string path, torrent_handle & handle ) : path_(path), handle_(handle) {}
+
+		std::string path_;
+		torrent_handle handle_;
+
+		bool operator<( TorrentFile const & other ) const { return handle_ < other.handle_; }
+		bool operator==( TorrentFile const & other ) const { return handle_ == other.handle_; }
+	};
+
 	//////////////////////////////////////////////////////////////////////////
 	//
 
 	class TorrentSessionImpl : public TorrentSessionImplBase
 	{
 	public:
-		typedef boost::unordered_set<torrent_status> TorrentStatuses;
-		typedef std::multimap<std::string, torrent_handle> FileHandles;
-		typedef std::set<torrent_handle> NonFileHandles;
-		typedef std::map< std::string, torrent_handle > Torrents;
+		typedef tuple_map< std::string, TorrentEntry > Torrents; // first : tag, second : entry
+		typedef tuple_map< std::string, TorrentFile > FileHandles; // first : filepath, second : handle
+		typedef boost::unordered_set<torrent_handle> NonFileHandles;
 
 		TorrentSessionImpl(int listenPort, std::vector<std::string> const & sessionSettingParam, ErrorHandler error_handler, EventHandler event_handler );
 
@@ -48,6 +79,8 @@ namespace libtorrent
 		virtual void update();
 		virtual bool add(std::string const & torrent);
 		virtual bool del(std::string const & torrent, bool delete_torrent_file, bool delete_download_file);
+		virtual bool pause(std::string const & torrent);
+		virtual bool resume( std::string const & torrent );
 		virtual bool setting( std::vector<std::string> const & params, bool isFirst = false );
 
 	private:
@@ -91,20 +124,12 @@ namespace libtorrent
 		EventHandler event_handler_;
 
 		std::deque<std::string> events_;
-
-		// the string is the filename of the .torrent file, but only if
-		// it was added through the directory monitor. It is used to
-		// be able to remove torrents that were added via the directory
-		// monitor when they're not in the directory anymore.		
-		TorrentStatuses torrent_statuses_;
-		//FilteredHandles filtered_handles_;
-
-		// maps filenames to torrent_handles		
+		
+		Torrents torrents_;
+		// maps filenames to torrent_handles
 		FileHandles files_;
 		// torrents that were not added via the monitor dir
 		NonFileHandles non_files_;
-
-		Torrents torrents_;
 
 		ptime next_dir_scan_;
 

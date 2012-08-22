@@ -1,85 +1,8 @@
 #include "session_impl.h"
+#include "debug_print.hpp"
 
 namespace libtorrent
 {
-	//////////////////////////////////////////////////////////////////////////
-	//
-
-	bool compare_torrent(torrent_status const* lhs, torrent_status const* rhs)
-	{
-		if (lhs->queue_position != -1 && rhs->queue_position != -1)
-		{
-			// both are downloading, sort by queue pos
-			return lhs->queue_position < rhs->queue_position;
-		}
-		else if (lhs->queue_position == -1 && rhs->queue_position == -1)
-		{
-			// both are seeding, sort by seed-rank
-			if (lhs->seed_rank != rhs->seed_rank)
-				return lhs->seed_rank > rhs->seed_rank;
-
-			return lhs->info_hash < rhs->info_hash;
-		}
-
-		return (lhs->queue_position == -1) < (rhs->queue_position == -1);
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-
-	int save_file(std::string const& filename, std::vector<char>& v)
-	{
-		using namespace libtorrent;
-
-		file f;
-		error_code ec;
-		if (!f.open(filename, file::write_only, ec)) return -1;
-		if (ec) return -1;
-		file::iovec_t b = {&v[0], v.size()};
-		size_type written = f.writev(0, &b, 1, ec);
-		if (written != int(v.size())) return -3;
-		if (ec) return -3;
-		return 0;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-
-	void print_alert(libtorrent::alert const* a, std::string& str)
-	{
-		using namespace libtorrent;
-
-#ifdef ANSI_TERMINAL_COLORS
-		if (a->category() & alert::error_notification)
-		{
-			str += esc("31");
-		}
-		else if (a->category() & (alert::peer_notification | alert::storage_notification))
-		{
-			str += esc("33");
-		}
-#endif
-		str += "[";
-		str += time_now_string();
-		str += "] ";
-		str += a->message();
-#ifdef ANSI_TERMINAL_COLORS
-		str += esc("0");
-#endif
-
-		//if (g_log_file)
-		//	fprintf(g_log_file, "[%s] %s\n", time_now_string(),  a->message().c_str());
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-
-	bool yes(libtorrent::torrent_status const&)
-	{ return true; }
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-
 	//////////////////////////////////////////////////////////////////////////
 	//
 
@@ -251,48 +174,28 @@ namespace libtorrent
 
 	bool TorrentSessionImpl::del( std::string const & torrent, bool delete_torrent_file, bool delete_download_file )
 	{
-		auto i = torrents_.find( torrent );
+		auto entry = torrents_.find_iter<0>( torrent );
 
-		if( i == torrents_.end() )
+		if( entry == torrents_.end<0>() )
 			return false;
 
-		torrent_handle const & handle = i->second;
+		torrent_handle const & handle = std::tr1::get<1>( *entry->second ).handle_;
 
+		non_files_.erase(handle);
+		
+		
+		auto file = files_.find_iter<0>( torrent );
 
-		auto status = std::find_if( torrent_statuses_.begin(), torrent_statuses_.end()
-			, [&handle](TorrentStatuses::value_type const & v)->bool{ return v.handle == handle; } );
-
-		if( status != torrent_statuses_.end() )
-			torrent_statuses_.erase(status);
-
-
-		auto file = std::find_if( files_.begin(), files_.end()
-			, [&handle]( FileHandles::value_type const & v )->bool{ return v.second == handle; } );
-
-		if( file != files_.end() )
+		if( file != files_.end<0>() )
 		{
-			error_code ec;
-
 			// also delete the .torrent file from the torrent directory
 			if( delete_torrent_file )
 			{
-				remove(combine_path(monitor_dir_, file->first), ec);
-				remove(combine_path("", file->first), ec);
+				error_code ec;
+				remove(combine_path("", std::tr1::get<1>( *file->second ).path_), ec);
 			}
 
-			//if (ec)
-			//	printf("failed to delete .torrent file: %s\n", ec.message().c_str());
-
-			files_.erase(file);
-		}
-
-
-		auto non_file = std::find_if( non_files_.begin(), non_files_.end()
-			, [&handle]( NonFileHandles::value_type const & v )->bool{ return v == handle; } );
-
-		if( non_file != non_files_.end() )
-		{
-			non_files_.erase(non_file);
+			files_.erase<0>(file);
 		}
 
 
@@ -301,8 +204,24 @@ namespace libtorrent
 			session_.remove_torrent( handle, delete_download_file ? session::delete_files : session::none );
 		}
 
-		torrents_.erase(i);
+		torrents_.erase<0>(entry);
 
+		return true;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	bool TorrentSessionImpl::pause( std::string const & torrent )
+	{		
+		return true;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	bool TorrentSessionImpl::resume( std::string const & torrent )
+	{
 		return true;
 	}
 
@@ -555,149 +474,6 @@ namespace libtorrent
 	//////////////////////////////////////////////////////////////////////////
 	//
 
-	char const* esc(char const* code)
-	{
-#ifdef ANSI_TERMINAL_COLORS
-		// this is a silly optimization
-		// to avoid copying of strings
-		enum { num_strings = 200 };
-		static char buf[num_strings][20];
-		static int round_robin = 0;
-		char* ret = buf[round_robin];
-		++round_robin;
-		if (round_robin >= num_strings) round_robin = 0;
-		ret[0] = '\033';
-		ret[1] = '[';
-		int i = 2;
-		int j = 0;
-		while (code[j]) ret[i++] = code[j++];
-		ret[i++] = 'm';
-		ret[i++] = 0;
-		return ret;
-#else
-		return "";
-#endif
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-
-	void print_peer_info(std::string& out, PeerInfos const& peers)
-	{
-		char str[1024];
-		for (auto i = peers.begin(); i != peers.end(); ++i)
-		{
-			peer_info * peerInfo = i->get();
-
-			if (peerInfo->flags & (peer_info::handshake | peer_info::connecting | peer_info::queued))
-				continue;
-
-			//if (print_ip)
-			{
-				snprintf(str, sizeof(str), "peer : %-30s %-22s", (print_endpoint(peerInfo->ip) +
-					(peerInfo->connection_type == peer_info::bittorrent_utp ? " [uTP]" : "")).c_str()
-					, print_endpoint(peerInfo->local_endpoint).c_str());
-				out += str;
-				out += "\n";
-			}
-		}
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-
-	std::string const& progress_bar(int progress, int width, char const* code = "33")
-	{
-		static std::string bar;
-		bar.clear();
-		bar.reserve(width + 10);
-
-		int progress_chars = (progress * width + 500) / 1000;
-		bar = esc(code);
-		std::fill_n(std::back_inserter(bar), progress_chars, '#');
-		std::fill_n(std::back_inserter(bar), width - progress_chars, '-');
-		bar += esc("0");
-		return bar;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-
-	std::string to_string(int v, int width)
-	{
-		char buf[100];
-		snprintf(buf, sizeof(buf), "%*d", width, v);
-		return buf;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-
-	std::string& to_string(float v, int width, int precision = 3)
-	{
-		// this is a silly optimization
-		// to avoid copying of strings
-		enum { num_strings = 20 };
-		static std::string buf[num_strings];
-		static int round_robin = 0;
-		std::string& ret = buf[round_robin];
-		++round_robin;
-		if (round_robin >= num_strings) round_robin = 0;
-		ret.resize(20);
-		int size = snprintf(&ret[0], 20, "%*.*f", width, precision, v);
-		ret.resize((std::min)(size, width));
-		return ret;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-
-	std::string add_suffix(float val, char const* suffix = 0)
-	{
-		std::string ret;
-		if (val == 0)
-		{
-			ret.resize(4 + 2, ' ');
-			if (suffix) ret.resize(4 + 2 + strlen(suffix), ' ');
-			return ret;
-		}
-
-		const char* prefix[] = {"kB", "MB", "GB", "TB"};
-		const int num_prefix = sizeof(prefix) / sizeof(const char*);
-		for (int i = 0; i < num_prefix; ++i)
-		{
-			val /= 1000.f;
-			if (std::fabs(val) < 1000.f)
-			{
-				ret = to_string(val, 4);
-				ret += prefix[i];
-				if (suffix) ret += suffix;
-				return ret;
-			}
-		}
-		ret = to_string(val, 4);
-		ret += "PB";
-		if (suffix) ret += suffix;
-		return ret;
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-
-	void clear_home()
-	{
-		CONSOLE_SCREEN_BUFFER_INFO si;
-		HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-		GetConsoleScreenBufferInfo(h, &si);
-		COORD c = {0, 0};
-		DWORD n;
-		FillConsoleOutputCharacter(h, ' ', si.dwSize.X * si.dwSize.Y, c, &n);
-		SetConsoleCursorPosition(h, c);
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	//
-
 	void TorrentSessionImpl::update()
 	{
 		session_.post_torrent_updates();
@@ -735,12 +511,14 @@ namespace libtorrent
 
 		PeerInfos peer_infos;
 
-		for( auto status = torrent_statuses_.begin(); status != torrent_statuses_.end(); ++status )
+		for( auto i = torrents_.begin<0>(); i != torrents_.end<0>(); ++i )
 		{
-			if( !status->handle.is_valid() )
+			torrent_status const & status = std::tr1::get<1>( *i->second ).status_;
+
+			if( !status.handle.is_valid() )
 				continue;
 
-			torrent_handle const & handle = status->handle;
+			torrent_handle const & handle = status.handle;
 
 			out += "====== ";
 			out += handle.name();
@@ -775,11 +553,11 @@ namespace libtorrent
 
 			// download
 
-			if( status->state == torrent_status::seeding )
+			if( status.state == torrent_status::seeding )
 			{
 				out += "seeding\n";
 			}
-			else if( status->has_metadata )
+			else if( status.has_metadata )
 			{
 				std::vector<size_type> file_progress;
 				handle.file_progress(file_progress);
@@ -841,8 +619,7 @@ namespace libtorrent
 			std::string file = combine_path(monitor_dir_, i.file());
 			if (extension(file) != ".torrent") continue;
 
-			FileHandles::iterator k = files_.find(file);
-			if (k != files_.end())
+			if ( files_.find<0>(file) )
 			{
 				valid.insert(file);
 				continue;
@@ -855,8 +632,37 @@ namespace libtorrent
 		}
 
 		// remove the torrents that are no longer in the directory
+		for( auto i=valid.begin(); i!=valid.end(); ++i )
+		{
+			auto file = files_.find_iter<0>(*i);
 
-		for (FileHandles::iterator i = files_.begin(); !files_.empty() && i != files_.end();)
+			if( file != files_.end<0>() )
+			{
+				auto & handle = std::tr1::get<1>( *file->second ).handle_;
+
+				if( !handle.is_valid() )
+				{
+					files_.erase<0>( file );
+					continue;
+				}
+
+				handle.auto_managed(false);
+				handle.pause();
+
+				// the alert handler for save_resume_data_alert
+				// will save it to disk
+				if (handle.need_save_resume_data())
+				{
+					handle.save_resume_data();
+					++num_outstanding_resume_data_;
+				}
+
+				files_.erase<0>(file);
+			}
+		}
+		
+		/*
+		for (FileHandles::iterator i = files_.begin<0>(); !files_.empty() && i != files_.end<0>();)
 		{
 			if (i->first.empty() || valid.find(i->first) != valid.end())
 			{
@@ -883,6 +689,7 @@ namespace libtorrent
 
 			files_.erase(i++);
 		}
+		*/
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1030,6 +837,7 @@ namespace libtorrent
 			// also, add it to the files map, and remove it from the non_files list
 			// to keep the scan dir logic in sync so it's not removed, or added twice
 			torrent_handle h = p->handle;
+
 			if (h.is_valid()) {
 				torrent_info const& ti = h.get_torrent_info();
 				create_torrent ct(ti);
@@ -1040,8 +848,14 @@ namespace libtorrent
 				filename = combine_path(monitor_dir_, filename);
 				save_file(filename, buffer);
 
-				files_.insert(std::pair<std::string, libtorrent::torrent_handle>(filename, h));
-				non_files_.erase(h);
+				auto entry = torrents_.find<1>(h);
+
+				if( entry )
+				{
+					std::string const & tag = std::tr1::get<0>( *entry );
+					files_.insert(tag, TorrentFile( filename, h ) );
+					non_files_.erase(h);
+				}			
 			}
 		}
 		else if (add_torrent_alert* p = alert_cast<add_torrent_alert>(a))
@@ -1070,11 +884,9 @@ namespace libtorrent
 
 				tag = tag.substr( tag.find("@tag:")+5, std::string::npos );
 
-				torrents_.insert( std::make_pair( tag, h ) );
-
 				if (isFile)
 				{
-					files_.insert(std::make_pair(tag, h));
+					files_.insert( tag, TorrentFile( tag, h ) );
 				}
 				else
 				{
@@ -1105,7 +917,7 @@ namespace libtorrent
 					}
 				}
 
-				torrent_statuses_.insert(h.status());
+				torrents_.insert(tag, TorrentEntry(h) );
 			}
 		}
 		else if (torrent_finished_alert* p = alert_cast<torrent_finished_alert>(a))
@@ -1133,8 +945,7 @@ namespace libtorrent
 				save_file(combine_path(h.save_path(), combine_path(".resume", to_hex(h.info_hash().to_string()) + ".resume")), out);
 				if (h.is_valid()
 					&& non_files_.find(h) == non_files_.end()
-					&& std::find_if(files_.begin(), files_.end()
-					, boost::bind(&FileHandles::value_type::second, _1) == h) == files_.end())
+					&& !files_.find<1>(TorrentFile("",h)) )
 					session_.remove_torrent(h);
 			}
 		}
@@ -1144,8 +955,7 @@ namespace libtorrent
 			torrent_handle h = p->handle;
 			if (h.is_valid()
 				&& non_files_.find(h) == non_files_.end()
-				&& std::find_if(files_.begin(), files_.end()
-				, boost::bind(&FileHandles::value_type::second, _1) == h) == files_.end())
+				&& !files_.find<1>(TorrentFile("",h)) )
 				session_.remove_torrent(h);
 		}
 		else if (torrent_paused_alert* p = alert_cast<torrent_paused_alert>(a))
@@ -1159,19 +969,22 @@ namespace libtorrent
 		}
 		else if (state_update_alert* p = alert_cast<state_update_alert>(a))
 		{
-			bool need_filter_update = false;
-			for (std::vector<torrent_status>::iterator i = p->status.begin();
-				i != p->status.end(); ++i)
+			for (auto i = p->status.begin(); i != p->status.end(); ++i)
 			{
-				TorrentStatuses::iterator j = torrent_statuses_.find(*i);
+				auto entry = torrents_.find<1>(i->handle);
+
 				// don't add new entries here, that's done in the handler
 				// for add_torrent_alert
-				if (j == torrent_statuses_.end()) continue;
-				if (j->state != i->state
-					|| j->paused != i->paused
-					|| j->auto_managed != i->auto_managed)
-					need_filter_update = true;
-				((torrent_status&)*j) = *i;
+				if ( !entry ) continue;
+
+				torrent_status & status = const_cast< torrent_status& >( std::tr1::get<1>( *entry ).status_ );
+
+				if (status.state != i->state
+					|| status.paused != i->paused
+					|| status.auto_managed != i->auto_managed)
+				{
+					status = *i;
+				}
 			}
 
 			return true;
