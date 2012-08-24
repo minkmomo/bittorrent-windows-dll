@@ -118,6 +118,12 @@ int _tmain(int argc, _TCHAR* argv[])
 		Sleep(1);
 
 		torrent_session.update();
+
+		// if you need
+		// torrent_session.get_magnet( test_torrent_name );
+		// torrent_session.pause( test_torrent_name );
+		// torrent_session.resume( test_torrent_name );
+		// torrent_session.del( test_torrent_name );
 	}	
 
 	return 0;
