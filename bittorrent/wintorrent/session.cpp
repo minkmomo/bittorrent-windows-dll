@@ -82,4 +82,19 @@ namespace libtorrent
 	}
 
 	//////////////////////////////////////////////////////////////////////////
+	//
+
+	void TorrentSession::set_sequential_down( std::string torrent, bool sequential ) {
+		impl_->set_sequential_down( torrent, sequential );
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	bool TorrentSession::get_status( std::string torrent, TorrentStatus & ts )
+	{
+		return impl_->get_status( torrent, ts );
+	}
+
+	//////////////////////////////////////////////////////////////////////////
 }
