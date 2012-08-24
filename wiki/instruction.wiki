@@ -8,6 +8,10 @@
 
 = 사용법 =
 
+ * 헤더파일과 lib 파일을 프로젝트로 포함시킨 후 dll 파일을 작업 디렉토리로 복사합니다.
+
+ * 아래는 간단한 사용 예제입니다.
+
 토렌파일 만들기 :
 {{{
 #include "bittorrent.h"
@@ -23,9 +27,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	std::vector<std::string> webseeds;
 	std::vector<std::string> trackers;
 
-	// 만약 웹시드 링크가 있다면.
+	// add your web seeds
 	webseeds.push_back( "http://dl.dropbox.com/s/qod5i7lsqo2r9hb/20120723_145231.mp4" );
 
+	// add trackers
 	trackers.push_back( "udp://tracker.openbittorrent.com:80/announce" );
 	trackers.push_back( "udp://tracker.publicbt.com:80/announce" );
 
