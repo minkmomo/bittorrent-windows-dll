@@ -46,8 +46,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		Sleep(1);
 
 		torrent_session.update();
-	}
-	
+	}	
 
 	return 0;
 }
