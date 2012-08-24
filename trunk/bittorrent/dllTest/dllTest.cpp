@@ -27,11 +27,26 @@ int _tmain(int argc, _TCHAR* argv[])
 		::MessageBoxA(0,msg, 0,0);
 	};
 
-	auto event_handler = [&finish,test_torrent_name]( libtorrent::eTorrentEvent e, std::string const & torrent ) {
-		if( torrent == test_torrent_name )
+	auto event_handler = [&finish,test_torrent_name]( libtorrent::eTorrentEvent e, std::string const & torrent ) 
+	{
+		switch( e )
 		{
-			::MessageBoxA( 0, test_torrent_name, "complete", 0 );
-			finish = true;
+		case libtorrent::eTorrentEvent::torrent_event_add_failed :
+			break;
+		case libtorrent::eTorrentEvent::torrent_event_finished :
+		{
+			char msg[1024];
+			sprintf_s(msg, sizeof(msg), "%s downdload is completed.\ndo you want exit?", torrent.c_str());
+			
+			if( ::MessageBoxA( 0, msg, "complete", MB_YESNO ) == S_OK )
+			{
+				finish = true;
+			}
+		}
+			
+			break;
+		default:
+			break;
 		}
 	};
 

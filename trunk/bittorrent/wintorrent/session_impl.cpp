@@ -1125,4 +1125,108 @@ namespace libtorrent
 	}
 
 	//////////////////////////////////////////////////////////////////////////
+	//
+
+	void TorrentSessionImpl::set_sequential_down( std::string const & torrent, bool sequential )
+	{
+		auto entry = torrents_.find<0>(torrent);
+
+		if( entry )
+		{
+			torrent_handle const & handle = std::tr1::get<1>(*entry).handle_;
+
+			if( handle.is_valid() )
+			{
+				handle.set_sequential_download( sequential );
+			}
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	bool TorrentSessionImpl::get_status( std::string const & torrent, TorrentStatus & ts )
+	{
+		auto entry = torrents_.find<0>(torrent);
+
+		if( entry )
+		{
+			torrent_status const & status = std::tr1::get<1>(*entry).status_;
+
+#define _copy_to_ts( var ) ts.##var = status.##var;
+
+			ts.state = (TorrentStatus::state_t)status.state;
+			_copy_to_ts( paused );
+			_copy_to_ts( auto_managed );
+			_copy_to_ts( sequential_download );
+			_copy_to_ts( is_seeding );
+			_copy_to_ts( is_finished );
+			_copy_to_ts( has_metadata );
+			_copy_to_ts( progress );
+			_copy_to_ts( progress_ppm );
+			_copy_to_ts( current_tracker );
+			_copy_to_ts( total_download );
+			_copy_to_ts( total_upload );
+			_copy_to_ts( total_payload_download );
+			_copy_to_ts( total_payload_upload );
+			_copy_to_ts( total_failed_bytes );
+			_copy_to_ts( total_redundant_bytes );
+			_copy_to_ts( download_rate );
+			_copy_to_ts( upload_rate );
+			_copy_to_ts( download_payload_rate );
+			_copy_to_ts( upload_payload_rate );
+			_copy_to_ts( num_seeds );
+			_copy_to_ts( num_peers );
+			_copy_to_ts( num_complete );
+			_copy_to_ts( num_incomplete );
+			_copy_to_ts( list_seeds );
+			_copy_to_ts( list_peers );
+			_copy_to_ts( connect_candidates );
+			_copy_to_ts( num_pieces );
+			_copy_to_ts( total_done );
+			_copy_to_ts( total_wanted_done );
+			_copy_to_ts( total_wanted );
+			_copy_to_ts( distributed_full_copies );
+			_copy_to_ts( distributed_fraction );
+			_copy_to_ts( distributed_copies );
+			_copy_to_ts( block_size );
+			_copy_to_ts( num_uploads );
+			_copy_to_ts( num_connections );
+			_copy_to_ts( uploads_limit );
+			_copy_to_ts( connections_limit );
+			_copy_to_ts( up_bandwidth_queue );
+			_copy_to_ts( down_bandwidth_queue );
+			_copy_to_ts( all_time_upload );
+			_copy_to_ts( all_time_download );
+			_copy_to_ts( active_time );
+			_copy_to_ts( finished_time );
+			_copy_to_ts( seeding_time );
+			_copy_to_ts( seed_rank );
+			_copy_to_ts( last_scrape );
+			_copy_to_ts( has_incoming );
+			_copy_to_ts( sparse_regions );
+			_copy_to_ts( seed_mode );
+			_copy_to_ts( upload_mode );
+			_copy_to_ts( share_mode );
+			_copy_to_ts( super_seeding );
+			_copy_to_ts( priority );
+			_copy_to_ts( added_time );
+			_copy_to_ts( completed_time );
+			_copy_to_ts( last_seen_complete );
+			_copy_to_ts( time_since_upload );
+			_copy_to_ts( time_since_download );
+			_copy_to_ts( queue_position );
+			_copy_to_ts( need_save_resume );
+			_copy_to_ts( ip_filter_applies );
+			_copy_to_ts( listen_port );
+
+#undef _copy_to_ts
+
+			return true;
+		}
+
+		return false;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
 }
