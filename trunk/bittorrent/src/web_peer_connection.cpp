@@ -88,7 +88,16 @@ namespace libtorrent
 		// we always prefer downloading 1 MiB chunks
 		// from web seeds, or whole pieces if pieces
 		// are larger than a MiB
-		prefer_whole_pieces((std::min)((1024 * 1024) / tor->torrent_file().piece_length(), 1));
+
+		if( tor->torrent_file().piece_length() == 0 )
+		{
+			// magnet web seed;
+			prefer_whole_pieces(0);
+		}
+		else
+		{
+			prefer_whole_pieces((std::min)((1024 * 1024) / tor->torrent_file().piece_length(), 1));
+		}		
 		
 		// we want large blocks as well, so
 		// we can request more bytes at once
@@ -185,6 +194,7 @@ namespace libtorrent
 		int size = r.length;
 		const int block_size = t->block_size();
 		const int piece_size = t->torrent_file().piece_length();
+
 		peer_request pr;
 		while (size > 0)
 		{
