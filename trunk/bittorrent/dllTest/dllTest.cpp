@@ -38,7 +38,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			char msg[1024];
 			sprintf_s(msg, sizeof(msg), "%s downdload is completed.\ndo you want exit?", torrent.c_str());
 			
-			if( ::MessageBoxA( 0, msg, "complete", MB_YESNO ) == S_OK )
+			if( ::MessageBoxA( 0, msg, "completed", MB_YESNO ) == S_OK )
 			{
 				finish = true;
 			}
