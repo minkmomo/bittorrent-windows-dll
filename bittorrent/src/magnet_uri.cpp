@@ -44,7 +44,7 @@ namespace libtorrent
 	{
 		if (!handle.is_valid()) return "";
 
-		char ret[1024];
+		char ret[10240];
 		sha1_hash const& ih = handle.info_hash();
 		int num_chars = snprintf(ret, sizeof(ret), "magnet:?xt=urn:btih:%s"
 			, base32encode(std::string((char const*)&ih[0], 20)).c_str());
@@ -55,6 +55,7 @@ namespace libtorrent
 			num_chars += snprintf(ret + num_chars, sizeof(ret) - num_chars, "&dn=%s"
 				, escape_string(name.c_str(), name.length()).c_str());
 
+		/*
 		std::string tracker;
 		torrent_status st = handle.status();
 		if (!st.current_tracker.empty())
@@ -69,13 +70,36 @@ namespace libtorrent
 		if (!tracker.empty())
 			num_chars += snprintf(ret + num_chars, sizeof(ret) - num_chars, "&tr=%s"
 				, escape_string(tracker.c_str(), tracker.size()).c_str());
+				*/
+
+		auto trackers = handle.trackers();
+
+		for( auto tracker = trackers.begin(); tracker != trackers.end(); ++tracker )
+		{
+			if( !tracker->url.empty() )
+			{
+				num_chars += snprintf(ret + num_chars, sizeof(ret) - num_chars, "&tr=%s"
+					, escape_string(tracker->url.c_str(), tracker->url.length()).c_str());
+			}
+		}
+
+		auto web_seeds = handle.url_seeds();
+
+		for( auto web_seed = web_seeds.begin(); web_seed != web_seeds.end(); ++web_seed )
+		{
+			if( !web_seed->empty() )
+			{
+				num_chars += snprintf(ret + num_chars, sizeof(ret) - num_chars, "&ws=%s"
+					, escape_string(web_seed->c_str(), web_seed->length()).c_str());
+			}
+		}
 
 		return ret;
 	}
 
 	std::string make_magnet_uri(torrent_info const& info)
 	{
-		char ret[1024];
+		char ret[10240];
 		sha1_hash const& ih = info.info_hash();
 		int num_chars = snprintf(ret, sizeof(ret), "magnet:?xt=urn:btih:%s"
 			, base32encode(std::string((char*)&ih[0], 20)).c_str());
@@ -86,11 +110,35 @@ namespace libtorrent
 			num_chars += snprintf(ret + num_chars, sizeof(ret) - num_chars, "&dn=%s"
 				, escape_string(name.c_str(), name.length()).c_str());
 
+		/*
 		std::vector<announce_entry> const& tr = info.trackers();
 		if (!tr.empty())
 		{
 			num_chars += snprintf(ret + num_chars, sizeof(ret) - num_chars, "&tr=%s"
 				, escape_string(tr[0].url.c_str(), tr[0].url.length()).c_str());
+		}
+		*/
+
+		auto trackers = info.trackers();
+
+		for( auto tracker = trackers.begin(); tracker != trackers.end(); ++tracker )
+		{
+			if( !tracker->url.empty() )
+			{
+				num_chars += snprintf(ret + num_chars, sizeof(ret) - num_chars, "&tr=%s"
+					, escape_string(tracker->url.c_str(), tracker->url.length()).c_str());
+			}
+		}
+
+		auto web_seeds = info.web_seeds();
+
+		for( auto web_seed = web_seeds.begin(); web_seed != web_seeds.end(); ++web_seed )
+		{
+			if( !web_seed->url.empty() )
+			{
+				num_chars += snprintf(ret + num_chars, sizeof(ret) - num_chars, "&ws=%s"
+					, escape_string(web_seed->url.c_str(), web_seed->url.length()).c_str());
+			}
 		}
 
 		return ret;
@@ -170,6 +218,19 @@ namespace libtorrent
 			if (pos == std::string::npos) break;
 			pos += 4;
 			url = uri.substr(pos, uri.find('&', pos) - pos);
+		}
+		
+		std::string web_seed = url_has_argument(uri, "ws", &pos);
+		while (pos != std::string::npos)
+		{
+			error_code e;
+			web_seed = unescape_string(web_seed, e);
+			if (e) continue;
+			p.web_seeds_.insert(web_seed);
+			pos = uri.find("&ws=", pos);
+			if (pos == std::string::npos) break;
+			pos += 4;
+			web_seed = uri.substr(pos, uri.find('&', pos) - pos);
 		}
 	
 		std::string btih = url_has_argument(uri, "xt");

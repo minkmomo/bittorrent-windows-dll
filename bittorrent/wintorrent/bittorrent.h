@@ -3,6 +3,7 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <array>
 
 #ifdef _COMPLING_BITTORRENT_DLL_
 #define LIBSPEC __declspec(dllexport)
@@ -115,6 +116,8 @@ namespace libtorrent
 
 		void set_print_debug( bool print );
 		std::string get_tag( std::string torrent );
+		std::string get_magnet( std::string torrent );
+		void get_metadata( std::string torrent, std::vector<char> & data );
 
 	private:
 		TorrentSessionImplBase * impl_;
@@ -155,6 +158,8 @@ namespace libtorrent
 		virtual bool setting( std::vector<std::string> const & params, bool isFirst = false ) = 0;
 		virtual void set_print_debug( bool print ) = 0;
 		virtual std::string const & get_tag( std::string const & torrent ) = 0;
+		virtual std::string get_magnet( std::string const & torrent ) = 0;
+		virtual void get_metadata( std::string const & torrent, std::vector<char> & data ) = 0;
 	};
 
 	//////////////////////////////////////////////////////////////////////////

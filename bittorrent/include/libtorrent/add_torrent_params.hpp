@@ -144,6 +144,7 @@ namespace libtorrent
 		bool duplicate_is_error;
 		bool merge_resume_trackers;
 #endif
+		std::set<std::string> web_seeds_;
 	};
 }
 

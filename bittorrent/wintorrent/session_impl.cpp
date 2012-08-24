@@ -1080,4 +1080,49 @@ namespace libtorrent
 	}
 
 	//////////////////////////////////////////////////////////////////////////
+	//
+
+	std::string TorrentSessionImpl::get_magnet( std::string const & torrent )
+	{
+		std::string magnet;
+
+		auto entry = torrents_.find<0>( torrent );
+
+		if( entry )
+		{
+			torrent_handle const & handle = std::tr1::get<1>(*entry).handle_;
+
+			if( handle.is_valid() )
+				magnet = make_magnet_uri( std::tr1::get<1>(*entry).handle_ );
+		}
+
+		return magnet;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//
+
+	void TorrentSessionImpl::get_metadata( std::string const & torrent, std::vector<char> & data )
+	{
+		auto entry = torrents_.find<0>(torrent);
+
+		if( entry )
+		{
+			torrent_handle const & handle = std::tr1::get<1>(*entry).handle_;
+
+			if( handle.is_valid() )
+			{
+				torrent_info const & info = std::tr1::get<1>(*entry).handle_.get_torrent_info();
+
+				if( data.capacity() < info.m_info_section_size )
+					data.reserve( info.m_info_section_size );
+
+				data.resize( info.m_info_section_size );
+
+				memcpy_s( &data[0], data.size(), info.m_info_section.get(), info.m_info_section_size );
+			}
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
 }

@@ -576,6 +576,11 @@ namespace libtorrent
 			m_torrent_file->add_tracker(*i);
 		}
 
+		for( auto web_seed = p.web_seeds_.begin(); web_seed != p.web_seeds_.end(); ++web_seed )
+		{
+			m_web_seeds.push_back( web_seed_entry( maybe_url_encode( *web_seed ), web_seed_entry::url_seed ) );
+		}
+
 		if (settings().prefer_udp_trackers)
 			prioritize_udp_trackers();
 	}
@@ -7465,7 +7470,7 @@ namespace libtorrent
 		// ---- WEB SEEDS ----
 
 		// if we have everything we want we don't need to connect to any web-seed
-		if (!is_finished() && !m_web_seeds.empty() && m_files_checked
+		if (!is_finished() && !m_web_seeds.empty() && (m_files_checked || m_magnet_link)
 			&& int(m_connections.size()) < m_max_connections
 			&& m_ses.num_connections() < m_ses.settings().connections_limit)
 		{

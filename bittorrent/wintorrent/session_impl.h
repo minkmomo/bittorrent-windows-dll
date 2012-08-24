@@ -85,6 +85,8 @@ namespace libtorrent
 		virtual bool setting( std::vector<std::string> const & params, bool isFirst = false );
 		virtual void set_print_debug( bool print );
 		virtual std::string const & get_tag( std::string const & torrent );
+		virtual std::string get_magnet( std::string const & torrent );
+		virtual void get_metadata( std::string const & torrent, std::vector<char> & data );
 
 	private:
 		bool load_torrent( std::string const & torrent );
