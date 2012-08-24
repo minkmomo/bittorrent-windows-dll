@@ -15,12 +15,7 @@
 토렌파일 만들기 :
 {{{
 #include "bittorrent.h"
-
-#ifdef _DEBUG
-#pragma comment (lib, "bittorrent_d.lib")
-#else
 #pragma comment (lib, "bittorrent.lib")
-#endif
 
 int _tmain(int argc, _TCHAR* argv[])
 {	
