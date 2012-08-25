@@ -4,7 +4,7 @@
 
  * windows 환경에서 토렌트파일을 읽고 다운로드 하거나 .torrent 파일을 만들 수 있는 dll 라이브러리 솔루션입니다.
  * 토렌트 파일을 제어하기위한 기본 라이브러리로 libtorrent ( http://www.libtorrent.org ) 1.06 를 사용하였습니다.
- * 컴파일을 위해 boost ( 1.46.1 http://www.boost.org ) openssl library ( http://www.openssl.org/ )가 필요합니다.
+ * 컴파일을 위해 boost ( 1.46.1 http://www.boost.org )와 openssl library ( http://www.openssl.org/ )가 필요합니다.
 
 
 = 사용법 =
